@@ -30,6 +30,7 @@ import java.net.ConnectException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
@@ -115,6 +116,8 @@ public class OmeroWebClient {
 	 * User ID fetched from the login request response. Can be used to match {@code Owner}s in the browser.
 	 */
 	private int userId;
+
+  private String sessionId;
 	
 	
 	/**
@@ -224,9 +227,19 @@ public class OmeroWebClient {
 //				e.printStackTrace();
 //			}
 
+    String rtn = null;
 		try (InputStream input = connection.getInputStream()) {
-			return GeneralTools.readInputStreamAsString(input);
+			rtn = GeneralTools.readInputStreamAsString(input);
 		}
+
+    List<HttpCookie> cookies = ((CookieManager) handler).getCookieStore().getCookies();
+    for (HttpCookie cookie : cookies) {
+      if (cookie.getName().equals("sessionid")) {
+        sessionId = cookie.getValue();
+      }
+    }
+
+    return rtn;
 	}
 
 	private int keepAlive() {
@@ -314,6 +327,10 @@ public class OmeroWebClient {
 		return userId;
 	}
 
+  String getSessionId() {
+    return sessionId;
+  }
+
 	void setUsername(String newUsername) {
 		username.set(newUsername);
 	}
@@ -389,7 +406,7 @@ public class OmeroWebClient {
 		JsonElement element = JsonParser.parseString(json);
 		return element.getAsJsonObject().get("eventContext").getAsJsonObject().get("userId").getAsInt();		
 	}
-	
+
 	/**
 	 * Check and return whether the client is logged in to its server 
 	 * (<b>not</b> necessarily with access to all its images).
@@ -441,7 +458,7 @@ public class OmeroWebClient {
 			// Parse login response JSON to get default Group and user ID
 			defaultGroup = getDefaultGroup(result);
 			userId = getUserId(result);
-			
+
 			// If we have previous URIs and the the username was different
 			if (uris.size() > 0 && !usernameOld.isEmpty() && !usernameOld.equals(authentication.getUserName())) {
 				Dialogs.showInfoNotification("OMERO login", String.format("OMERO account switched from \"%s\" to \"%s\" for %s", usernameOld, authentication.getUserName(), serverURI));

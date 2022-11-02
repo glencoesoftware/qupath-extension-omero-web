@@ -21,10 +21,24 @@
 
 package qupath.lib.images.servers.omero;
 
+import java.awt.image.BandedSampleModel;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.DataBufferDouble;
+import java.awt.image.DataBufferFloat;
+import java.awt.image.DataBufferInt;
+import java.awt.image.DataBufferShort;
+import java.awt.image.DataBufferUShort;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
+
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,6 +59,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import qupath.lib.awt.common.BufferedImageTools;
+import qupath.lib.color.ColorModelFactory;
 import qupath.lib.images.servers.AbstractTileableImageServer;
 import qupath.lib.images.servers.ImageChannel;
 import qupath.lib.images.servers.ImageServerBuilder;
@@ -55,6 +70,8 @@ import qupath.lib.images.servers.TileRequest;
 import qupath.lib.images.servers.omero.OmeroShapes.OmeroShape;
 import qupath.lib.objects.PathObject;
 import qupath.lib.objects.PathObjectReader;
+
+import loci.formats.gui.AWTImageTools;
 
 /**
  * ImageServer that reads pixels using the OMERO web API.
@@ -180,19 +197,19 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		double pixelHeightMicrons = Double.NaN;
 		double zSpacingMicrons = Double.NaN;
 		PixelType pixelType = PixelType.UINT8;
-		boolean isRGB = true;
+		boolean isRGB = false;
 		double magnification = Double.NaN;
 		
 		JsonObject map = OmeroRequests.requestMetadata(scheme, host, port, Integer.parseInt(id));
 		JsonObject size = map.getAsJsonObject("size");
+    JsonObject meta = map.getAsJsonObject("meta");
 
 		sizeX = size.getAsJsonPrimitive("width").getAsInt();
 		sizeY = size.getAsJsonPrimitive("height").getAsInt();
 		sizeC = size.getAsJsonPrimitive("c").getAsInt();
 		sizeZ = size.getAsJsonPrimitive("z").getAsInt();
 		sizeT = size.getAsJsonPrimitive("t").getAsInt();
-		
-		
+    pixelType = convertPixelType(meta.getAsJsonPrimitive("pixelsType").getAsString());
 
 		JsonElement pixelSizeElement = map.get("pixel_size");
 		if (pixelSizeElement != null) {
@@ -209,27 +226,21 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 					zSpacingMicrons = zSpacing.getAsDouble();
 			}
 		}
-		
-		String pixelsType = null;
 
-		if (map.has("meta")) {
-			JsonObject meta = map.getAsJsonObject("meta");
-			if (meta.has("imageName"))
-				imageName = meta.get("imageName").getAsString();
-			if (meta.has("pixelsType"))
-				pixelsType = meta.get("pixelsType").getAsString();
+    if (meta.has("imageName")) {
+      imageName = meta.get("imageName").getAsString();
 		}
 		
-		
+	
+    // TODO : use actual channel metadata, not defaults
 		List<ImageChannel> channels = null;
-		if (sizeC == 3)
+		if (sizeC == 3) {
 			channels = ImageChannel.getDefaultRGBChannels();
-//		else if (sizeC == 1)
-//			channels = ImageChannel.getDefaultChannelList(1);
-		
-		if (channels == null || (pixelsType != null && !"uint8".equals(pixelsType)))
-			throw new IOException("Only 8-bit RGB images supported! Selected image has " + sizeC + " channel(s) & pixel type " + pixelsType);
-			
+    }
+    else {
+			channels = ImageChannel.getDefaultChannelList(sizeC);
+    }
+	
 		var levelBuilder = new ImageServerMetadata.ImageResolutionLevel.Builder(sizeX, sizeY);
 		
 		if (map.getAsJsonPrimitive("tiles").getAsBoolean()) {
@@ -263,7 +274,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		
 		ImageServerMetadata.Builder builder = new ImageServerMetadata.Builder(getClass(), uri.toString(), sizeX, sizeY)
 				.sizeT(sizeT)
-				.channels(ImageChannel.getDefaultRGBChannels())
+				.channels(channels)
 				.sizeZ(sizeZ)
 //				.args(args)
 				.name(imageName)
@@ -353,17 +364,16 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 
 		String urlFile;
 
-		if (nResolutions() > 1) {
-			int x = request.getTileX() / getPreferredTileWidth();
-			int y = request.getTileY() / getPreferredTileHeight();
+    int x = request.getTileX() / getPreferredTileWidth();
+    int y = request.getTileY() / getPreferredTileHeight();
 
-			// Note!  It's important to use the preferred tile size so that the correct x & y can be used
-			//			int width = request.getTileWidth();
-			//			int height = request.getTileHeight();
-			int width = getPreferredTileWidth();
-			int height = getPreferredTileHeight();
+    // Note!  It's important to use the preferred tile size so that the correct x & y can be used
+    //			int width = request.getTileWidth();
+    //			int height = request.getTileHeight();
+    int width = getPreferredTileWidth();
+    int height = getPreferredTileHeight();
 
-			// It's crucial not to request tiles that are too large, but the AbstractTileableImageServer should deal with this
+    // It's crucial not to request tiles that are too large, but the AbstractTileableImageServer should deal with this
 //			// Incorporate max size OMERO supports
 //			if (targetWidth > OMERO_MAX_SIZE || targetHeight > OMERO_MAX_SIZE) {
 //				BufferedImage img = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
@@ -384,42 +394,87 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 //				return img;
 //			}		
 
-			urlFile = "/webgateway/render_image_region/" + id + 
-					"/" + request.getZ() + 
-					"/" + request.getT() +
-					"/?tile=" + level + "," + x + "," + y + "," + width + "," + height +
-					"&c=1|0:255$FF0000,2|0:255$00FF00,3|0:255$0000FF" +
-					"&maps=[{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}}]" +
-					"&m=c&p=normal&q=" + quality;
 
-			URL url = new URL(scheme, host, port, urlFile);
+    // BufferedImage creation adapted from qupath.lib.images.servers.bioformats.BioFormatsImageServer
 
-			BufferedImage img = ImageIO.read(url);
+    Object[] pixels = new Object[nChannels()];
 
-			return img;
-		}
-		
-		// If resolution == 1
-		int x = request.getTileX();
-		int y = request.getTileY();
-		int width = getPreferredTileWidth();
-		int height = getPreferredTileHeight();
+    for (int c=0; c<nChannels(); c++) {
+      urlFile = "/tile/" + id + "/" + request.getZ() + "/" + c + "/" + request.getT() +
+        "?x=" + x + "&y=" + y + "&w=" + width + "&h=" + height +
+        "&format=tif&resolution=" + level + "&filename=tile.tif";
 
-		urlFile = "/webgateway/render_image_region/" + id + 
-				"/" + request.getZ() + 
-				"/" + request.getT() +
-				"/?region=" + x + "," + y + "," + width + "," + height +
-				"&c=1|0:255$FF0000,2|0:255$00FF00,3|0:255$0000FF" +
-				"&maps=[{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}}]" +
-				"&m=c&p=normal&q=" + quality;			
+      URL url = new URL(scheme, host, port, urlFile);
+      URLConnection conn = url.openConnection();
+      logger.warn("requesting tile with sessionid={}", getWebclient().getSessionId());
+      conn.setRequestProperty("Cookie", "sessionid=" + getWebclient().getSessionId());
+      conn.connect();
 
+      BufferedImage img = ImageIO.read(conn.getInputStream());
 
-		URL url = new URL(scheme, host, port, urlFile);
+      if (nChannels() == 1) {
+        return img;
+      }
 
-		BufferedImage img = ImageIO.read(url);
+      pixels[c] = AWTImageTools.getPixels(img);
+    }
 
-		return BufferedImageTools.resize(img, targetWidth, targetHeight, allowSmoothInterpolation());
-	}
+    DataBuffer dataBuffer;
+    PixelType pixelType = getPixelType();
+    switch (pixelType) {
+			case UINT8:
+        byte[][] bytes = new byte[pixels.length][];
+        for (int c=0; c<bytes.length; c++) {
+          bytes[c] = ((byte[][]) pixels[c])[0];
+        }
+				dataBuffer = new DataBufferByte(bytes, bytes[0].length);
+        break;
+			case UINT16:
+				short[][] shortArray = new short[pixels.length][];
+        for (int c=0; c<shortArray.length; c++) {
+          shortArray[c] = ((short[][]) pixels[c])[0];
+				}
+				dataBuffer = new DataBufferUShort(shortArray, shortArray[0].length);
+				break;
+			case INT16:
+				short[][] sshortArray = new short[pixels.length][];
+        for (int c=0; c<sshortArray.length; c++) {
+          sshortArray[c] = ((short[][]) pixels[c])[0];
+				}
+				dataBuffer = new DataBufferShort(sshortArray, sshortArray[0].length);
+				break;
+			case INT32:
+				int[][] intArray = new int[pixels.length][];
+        for (int c=0; c<intArray.length; c++) {
+          intArray[c] = ((int[][]) pixels[c])[0];
+				}
+				dataBuffer = new DataBufferInt(intArray, intArray[0].length);
+				break;
+			case FLOAT32:
+				float[][] floatArray = new float[pixels.length][];
+        for (int c=0; c<floatArray.length; c++) {
+          floatArray[c] = ((float[][]) pixels[c])[0];
+				}
+				dataBuffer = new DataBufferFloat(floatArray, floatArray[0].length);
+				break;
+			case FLOAT64:
+				double[][] doubleArray = new double[pixels.length][];
+        for (int c=0; c<doubleArray.length; c++) {
+          doubleArray[c] = ((double[][]) pixels[c])[0];
+				}
+				dataBuffer = new DataBufferDouble(doubleArray, doubleArray[0].length);
+				break;
+			default:
+				throw new UnsupportedOperationException("Unsupported pixel type " + pixelType);
+    }
+
+    List<ImageChannel> channels = getMetadata().getChannels();
+
+    ColorModel colorModel = ColorModelFactory.createColorModel(pixelType, channels);
+    SampleModel sampleModel = sampleModel = new BandedSampleModel(dataBuffer.getDataType(), width, height, channels.size());
+    WritableRaster raster = WritableRaster.createWritableRaster(sampleModel, dataBuffer, null);
+    return new BufferedImage(colorModel, raster, false, null);
+  }
 	
 	
 	@Override
@@ -504,4 +559,26 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		return host.equals(((OmeroWebImageServer)obj).getHost()) &&
 				client.getUsername().equals(((OmeroWebImageServer)obj).getWebclient().getUsername());
 	}
+
+  private PixelType convertPixelType(String type) {
+    switch (type) {
+      case "int8":
+        return PixelType.INT8;
+      case "uint8":
+        return PixelType.UINT8;
+      case "int16":
+        return PixelType.INT16;
+      case "uint16":
+        return PixelType.UINT16;
+      case "int32":
+        return PixelType.INT32;
+      case "uint32":
+        return PixelType.UINT32;
+      case "float":
+        return PixelType.FLOAT32;
+      case "double":
+        return PixelType.FLOAT64;
+    }
+    throw new IllegalArgumentException("Unsupported pixel type: " + type);
+  }
 }

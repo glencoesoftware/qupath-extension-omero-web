@@ -951,9 +951,12 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 	 * @return isSupported
 	 */
 	private static boolean isSupported(OmeroObject omeroObj) {
+    /*
 		if (omeroObj == null || omeroObj.getType() != OmeroObjectType.IMAGE)
 			return true;
 		return isUint8((Image)omeroObj) && has3Channels((Image)omeroObj);
+    */
+    return true;
 	}
 	
 	private static boolean isUint8(Image image) {
