@@ -399,12 +399,15 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 
     Object[] pixels = new Object[nChannels()];
 
+    // TODO: make this configurable?
+    int microservicePort = 8082;
+
     for (int c=0; c<nChannels(); c++) {
       urlFile = "/tile/" + id + "/" + request.getZ() + "/" + c + "/" + request.getT() +
         "?x=" + x + "&y=" + y + "&w=" + width + "&h=" + height +
-        "&format=tif&resolution=" + level + "&filename=tile.tif";
+        "&format=tif&resolution=" + level;
 
-      URL url = new URL(scheme, host, port, urlFile);
+      URL url = new URL(scheme, host, microservicePort, urlFile);
       URLConnection conn = url.openConnection();
       logger.warn("requesting tile with sessionid={}", getWebclient().getSessionId());
       conn.setRequestProperty("Cookie", "sessionid=" + getWebclient().getSessionId());
