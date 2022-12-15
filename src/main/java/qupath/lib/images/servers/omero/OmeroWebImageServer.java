@@ -407,9 +407,8 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
         "?x=" + x + "&y=" + y + "&w=" + width + "&h=" + height +
         "&format=tif&resolution=" + level;
 
-      URL url = new URL(scheme, host, microservicePort, urlFile);
+      URL url = new URL("http", host, microservicePort, urlFile);
       URLConnection conn = url.openConnection();
-      logger.warn("requesting tile with sessionid={}", getWebclient().getSessionId());
       conn.setRequestProperty("Cookie", "sessionid=" + getWebclient().getSessionId());
       conn.connect();
 
