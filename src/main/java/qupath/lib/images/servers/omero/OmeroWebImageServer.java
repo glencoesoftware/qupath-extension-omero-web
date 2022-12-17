@@ -230,12 +230,32 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
     if (meta.has("imageName")) {
       imageName = meta.get("imageName").getAsString();
 		}
-		
-	
-    // TODO : use actual channel metadata, not defaults
-		List<ImageChannel> channels = null;
-		if (sizeC == 3) {
-			channels = ImageChannel.getDefaultRGBChannels();
+
+    // copy channel names and colors from OMERO metadata
+    List<ImageChannel> channels = null;
+    if (map.has("channels")) {
+      channels = new ArrayList<ImageChannel>();
+      JsonArray allChannels = map.get("channels").getAsJsonArray();
+
+      for (int index=0; index<allChannels.size(); index++) {
+        JsonObject channelMap = allChannels.get(index).getAsJsonObject();
+        String channelName = channelMap.getAsJsonPrimitive("label").getAsString();
+        String color = channelMap.getAsJsonPrimitive("color").getAsString();
+        Integer parsedColor = null;
+
+        if (channelName == null || channelName.isEmpty()) {
+          channelName = "Channel " + (index + 1);
+        }
+        if (color == null || color.isEmpty()) {
+          parsedColor = ImageChannel.getDefaultChannelColor(index);
+        }
+        else {
+          parsedColor = Integer.parseInt(color, 16);
+        }
+
+        ImageChannel channel = ImageChannel.getInstance(channelName, parsedColor);
+        channels.add(channel);
+      }
     }
     else {
 			channels = ImageChannel.getDefaultChannelList(sizeC);
