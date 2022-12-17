@@ -379,41 +379,10 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 
 		int level = request.getLevel();
 
-		int targetWidth = request.getTileWidth();
-		int targetHeight = request.getTileHeight();
-
-		String urlFile;
-
-    int x = request.getTileX() / getPreferredTileWidth();
-    int y = request.getTileY() / getPreferredTileHeight();
-
-    // Note!  It's important to use the preferred tile size so that the correct x & y can be used
-    //			int width = request.getTileWidth();
-    //			int height = request.getTileHeight();
-    int width = getPreferredTileWidth();
-    int height = getPreferredTileHeight();
-
-    // It's crucial not to request tiles that are too large, but the AbstractTileableImageServer should deal with this
-//			// Incorporate max size OMERO supports
-//			if (targetWidth > OMERO_MAX_SIZE || targetHeight > OMERO_MAX_SIZE) {
-//				BufferedImage img = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
-//				Graphics2D g2d = img.createGraphics();
-//				int requestSize = (int)Math.round(OMERO_MAX_SIZE * request.getRegionRequest().getDownsample());
-//				for (int yy = 0; yy < request.getImageHeight(); yy += requestSize) {
-//					for (int xx = 0; xx < request.getImageWidth(); xx += requestSize) {
-//						RegionRequest requestTile = RegionRequest.createInstance(
-//								request.getRegionRequest().getPath(), request.getRegionRequest().getDownsample(), 
-//								request.getImageX() + xx, request.getImageY() + yy, requestSize, requestSize, request.getZ(), request.getT());
-//						BufferedImage imgTile = readTile(
-//								new TileRequest(requestTile, level, OMERO_MAX_SIZE, OMERO_MAX_SIZE));
-//						g2d.drawImage(imgTile, (int)((xx / requestSize) * OMERO_MAX_SIZE), (int)((yy / requestSize) * OMERO_MAX_SIZE), null);
-//					}
-//
-//				}
-//				g2d.dispose();
-//				return img;
-//			}		
-
+    int x = request.getTileX();
+    int y = request.getTileY();
+		int width = request.getTileWidth();
+		int height = request.getTileHeight();
 
     // BufferedImage creation adapted from qupath.lib.images.servers.bioformats.BioFormatsImageServer
 
@@ -423,7 +392,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
     int microservicePort = 8082;
 
     for (int c=0; c<nChannels(); c++) {
-      urlFile = "/tile/" + id + "/" + request.getZ() + "/" + c + "/" + request.getT() +
+      String urlFile = "/tile/" + id + "/" + request.getZ() + "/" + c + "/" + request.getT() +
         "?x=" + x + "&y=" + y + "&w=" + width + "&h=" + height +
         "&format=tif&resolution=" + level;
 
@@ -491,7 +460,6 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
     }
 
     List<ImageChannel> channels = getMetadata().getChannels();
-
     ColorModel colorModel = ColorModelFactory.createColorModel(pixelType, channels);
     SampleModel sampleModel = sampleModel = new BandedSampleModel(dataBuffer.getDataType(), width, height, channels.size());
     WritableRaster raster = WritableRaster.createWritableRaster(sampleModel, dataBuffer, null);
