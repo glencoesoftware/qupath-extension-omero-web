@@ -377,7 +377,10 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 	@Override
 	protected BufferedImage readTile(TileRequest request) throws IOException {
 
-		int level = request.getLevel();
+    // calculate the resolution index to pass to OMERO
+    // the requested level matches Bio-Formats indexing,
+    // but OMERO expects resolutions to be specified in reverse order
+    int level = getMetadata().nLevels() - request.getLevel() - 1;
 
     int x = request.getTileX();
     int y = request.getTileY();
