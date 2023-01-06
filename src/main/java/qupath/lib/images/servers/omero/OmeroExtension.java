@@ -26,12 +26,15 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javafx.beans.property.StringProperty;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.control.Label;
@@ -45,6 +48,7 @@ import qupath.lib.gui.QuPathGUI;
 import qupath.lib.gui.dialogs.Dialogs;
 import qupath.lib.gui.extensions.GitHubProject;
 import qupath.lib.gui.extensions.QuPathExtension;
+import qupath.lib.gui.prefs.PathPrefs;
 import qupath.lib.gui.tools.MenuTools;
 import qupath.lib.gui.tools.PaneTools;
 
@@ -102,16 +106,21 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 	
 	private static Menu createServerListMenu(QuPathGUI qupath, Menu browseServerMenu) {
 		EventHandler<Event> validationHandler = e -> {
+      StringProperty usedServerProp = PathPrefs.createPersistentPreference("omero_ext.server_list", "");
+      String[] usedServers = usedServerProp.getValue().split(",");
+
 			browseServerMenu.getItems().clear();
 			
 			// Get all active servers
 			var activeServers = OmeroWebClients.getAllClients();
 			
 			// Populate the menu with each unique active servers
+      ArrayList<String> activeURIs = new ArrayList<String>();
 			for (var client: activeServers) {
 				if (client == null)
 					continue;
 				MenuItem item = new MenuItem(client.getServerURI() + "...");
+        activeURIs.add(client.getServerURI().toString());
 				item.setOnAction(e2 -> {
 					var browser = browsers.get(client);
 					if (browser == null || browser.getStage() == null) {
@@ -123,6 +132,18 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 				});
 				browseServerMenu.getItems().add(item);
 			}
+
+      // add servers that have been connected to previously,
+      // but which are not currently connected
+      for (String server : usedServers) {
+        if (!server.isEmpty() && !activeURIs.contains(server)) {
+          MenuItem item = new MenuItem(server);
+          item.setOnAction(e2 -> {
+            handleLogin(qupath, server);
+          });
+          browseServerMenu.getItems().add(item);
+        }
+      }
 			
 			// Create 'New server...' MenuItem
 			MenuItem customServerItem = new MenuItem("New server...");
@@ -140,50 +161,58 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 		        var path = tf.getText();
 				if (path == null || path.isEmpty())
 					return;
-				try {
-					if (!path.startsWith("http:") && !path.startsWith("https:"))
-						throw new IOException("The input URL must contain a scheme (e.g. \"https://\")!");
 
-					// Make the path a URI
-					URI uri = new URI(path);
-					
-					// Clean the URI (in case it's a full path)
-					URI uriServer = OmeroTools.getServerURI(uri);
-					
-					if (uriServer == null)
-						throw new MalformedURLException("Could not parse server from " + uri.toString());
-					
-					// Check if client exist and if browser is already opened
-					var client = OmeroWebClients.getClientFromServerURI(uriServer);
-					if (client == null)
-						client = OmeroWebClients.createClientAndLogin(uriServer);
-					
-					if (client == null)
-						throw new IOException("Could not parse server from " + uri.toString());
-					
-					var browser = browsers.get(client);
-					if (browser == null || browser.getStage() == null) {
-						// Create new browser
-						browser = new OmeroWebImageServerBrowserCommand(qupath, client);
-						browsers.put(client, browser);
-						browser.run();
-					} else	// Request focus for already-existing browser
-						browser.getStage().requestFocus();		
-					
-				} catch (FileNotFoundException ex) {
-					Dialogs.showErrorMessage("OMERO web server", String.format("An error occured when trying to reach %s: %s\"", path, ex.getLocalizedMessage()));
-				} catch (IOException | URISyntaxException ex) {
-					Dialogs.showErrorMessage("OMERO web server", ex.getLocalizedMessage());
-					return;
-				}
+        handleLogin(qupath, path);
+        if (usedServerProp.getValue().indexOf(path) < 0) {
+          usedServerProp.setValue(usedServerProp.getValue() + "," + path);
+        }
 			});
 			MenuTools.addMenuItems(browseServerMenu, null, customServerItem);
 		};
-		
+
 		// Ensure the menu is populated (every time the parent menu is opened)
 		browseServerMenu.getParentMenu().setOnShowing(validationHandler);	
 		return browseServerMenu;
 	}
+
+  static void handleLogin(QuPathGUI qupath, String path) {
+    try {
+      if (!path.startsWith("http:") && !path.startsWith("https:")) {
+        throw new IOException("The input URL must contain a scheme (e.g. \"https://\")!");
+      }
+      // Make the path a URI
+      URI uri = new URI(path);
+      
+      // Clean the URI (in case it's a full path)
+      URI uriServer = OmeroTools.getServerURI(uri);
+      
+      if (uriServer == null)
+        throw new MalformedURLException("Could not parse server from " + uri.toString());
+      
+      // Check if client exist and if browser is already opened
+      var client = OmeroWebClients.getClientFromServerURI(uriServer);
+      if (client == null)
+        client = OmeroWebClients.createClientAndLogin(uriServer);
+      
+      if (client == null)
+        throw new IOException("Could not parse server from " + uri.toString());
+      
+      var browser = browsers.get(client);
+      if (browser == null || browser.getStage() == null) {
+        // Create new browser
+        browser = new OmeroWebImageServerBrowserCommand(qupath, client);
+        browsers.put(client, browser);
+        browser.run();
+      } else	// Request focus for already-existing browser
+        browser.getStage().requestFocus();		
+      
+    } catch (FileNotFoundException ex) {
+      Dialogs.showErrorMessage("OMERO web server", String.format("An error occured when trying to reach %s: %s\"", path, ex.getLocalizedMessage()));
+    } catch (IOException | URISyntaxException ex) {
+      Dialogs.showErrorMessage("OMERO web server", ex.getLocalizedMessage());
+      return;
+    }
+  }
 	
 	/**
 	 * Return map of currently opened browsers.
