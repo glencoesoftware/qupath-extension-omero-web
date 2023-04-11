@@ -944,19 +944,19 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		GuiTools.paintImage(canvas, wi);
 		return wi;
 	}
-	
+
 	/**
 	 * Return whether the image type is supported by QuPath.
 	 * @param omeroObj
 	 * @return isSupported
 	 */
-	private static boolean isSupported(OmeroObject omeroObj) {
-    /*
+	private boolean isSupported(OmeroObject omeroObj) {
+    if (client.hasMicroservice()) {
+      return true;
+    }
 		if (omeroObj == null || omeroObj.getType() != OmeroObjectType.IMAGE)
 			return true;
 		return isUint8((Image)omeroObj) && has3Channels((Image)omeroObj);
-    */
-    return true;
 	}
 	
 	private static boolean isUint8(Image image) {

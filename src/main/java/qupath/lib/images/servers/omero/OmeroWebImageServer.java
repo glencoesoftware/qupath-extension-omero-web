@@ -173,7 +173,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		// Add URI to the client's list of URIs
 		client.addURI(uri);
 	}
-	
+
 	protected ImageServerMetadata buildMetadata() throws IOException {
 		String uriQuery = uri.getQuery();
 		if (uriQuery != null && !uriQuery.isEmpty() && uriQuery.startsWith("show=image-")) {
@@ -197,7 +197,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		double pixelHeightMicrons = Double.NaN;
 		double zSpacingMicrons = Double.NaN;
 		PixelType pixelType = PixelType.UINT8;
-		boolean isRGB = false;
+		boolean isRGB = !client.hasMicroservice();
 		double magnification = Double.NaN;
 		
 		JsonObject map = OmeroRequests.requestMetadata(scheme, host, port, Integer.parseInt(id));
@@ -233,7 +233,15 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 
     // copy channel names and colors from OMERO metadata
     List<ImageChannel> channels = null;
-    if (map.has("channels")) {
+    if (!client.hasMicroservice()) {
+      if (sizeC == 3) {
+        channels = ImageChannel.getDefaultRGBChannels();
+      }
+      if (channels == null || pixelType != PixelType.UINT8) {
+        throw new IOException("Only 8-bit RGB images supported! Selected image has " + sizeC + " channel(s) & pixel type " + pixelType);
+      }
+    }
+    else if (map.has("channels")) {
       channels = new ArrayList<ImageChannel>();
       JsonArray allChannels = map.get("channels").getAsJsonArray();
 
@@ -374,8 +382,90 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		return originalMetadata;
 	}
 
+  /**
+   * Retrieve a rendered tile from webgateway.
+   */
+  protected BufferedImage readRenderedTile(TileRequest request) throws IOException {
+		int level = request.getLevel();
+
+		int targetWidth = request.getTileWidth();
+		int targetHeight = request.getTileHeight();
+
+		String urlFile;
+
+		if (nResolutions() > 1) {
+			int x = request.getTileX() / getPreferredTileWidth();
+			int y = request.getTileY() / getPreferredTileHeight();
+
+			// Note!  It's important to use the preferred tile size so that the correct x & y can be used
+			//			int width = request.getTileWidth();
+			//			int height = request.getTileHeight();
+			int width = getPreferredTileWidth();
+			int height = getPreferredTileHeight();
+
+			// It's crucial not to request tiles that are too large, but the AbstractTileableImageServer should deal with this
+//			// Incorporate max size OMERO supports
+//			if (targetWidth > OMERO_MAX_SIZE || targetHeight > OMERO_MAX_SIZE) {
+//				BufferedImage img = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+//				Graphics2D g2d = img.createGraphics();
+//				int requestSize = (int)Math.round(OMERO_MAX_SIZE * request.getRegionRequest().getDownsample());
+//				for (int yy = 0; yy < request.getImageHeight(); yy += requestSize) {
+//					for (int xx = 0; xx < request.getImageWidth(); xx += requestSize) {
+//						RegionRequest requestTile = RegionRequest.createInstance(
+//								request.getRegionRequest().getPath(), request.getRegionRequest().getDownsample(), 
+//								request.getImageX() + xx, request.getImageY() + yy, requestSize, requestSize, request.getZ(), request.getT());
+//						BufferedImage imgTile = readTile(
+//								new TileRequest(requestTile, level, OMERO_MAX_SIZE, OMERO_MAX_SIZE));
+//						g2d.drawImage(imgTile, (int)((xx / requestSize) * OMERO_MAX_SIZE), (int)((yy / requestSize) * OMERO_MAX_SIZE), null);
+//					}
+//
+//				}
+//				g2d.dispose();
+//				return img;
+//			}		
+
+			urlFile = "/webgateway/render_image_region/" + id + 
+					"/" + request.getZ() + 
+					"/" + request.getT() +
+					"/?tile=" + level + "," + x + "," + y + "," + width + "," + height +
+					"&c=1|0:255$FF0000,2|0:255$00FF00,3|0:255$0000FF" +
+					"&maps=[{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}}]" +
+					"&m=c&p=normal&q=" + quality;
+
+			URL url = new URL(scheme, host, port, urlFile);
+
+			BufferedImage img = ImageIO.read(url);
+
+			return img;
+		}
+
+		// If resolution == 1
+		int x = request.getTileX();
+		int y = request.getTileY();
+		int width = getPreferredTileWidth();
+		int height = getPreferredTileHeight();
+
+		urlFile = "/webgateway/render_image_region/" + id + 
+				"/" + request.getZ() + 
+				"/" + request.getT() +
+				"/?region=" + x + "," + y + "," + width + "," + height +
+				"&c=1|0:255$FF0000,2|0:255$00FF00,3|0:255$0000FF" +
+				"&maps=[{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}},{%22inverted%22:{%22enabled%22:false}}]" +
+				"&m=c&p=normal&q=" + quality;			
+
+
+		URL url = new URL(scheme, host, port, urlFile);
+
+		BufferedImage img = ImageIO.read(url);
+
+		return BufferedImageTools.resize(img, targetWidth, targetHeight, allowSmoothInterpolation());
+  }
+
 	@Override
 	protected BufferedImage readTile(TileRequest request) throws IOException {
+    if (!client.hasMicroservice()) {
+      return readRenderedTile(request);
+    }
 
     // calculate the resolution index to pass to OMERO
     // the requested level matches Bio-Formats indexing,
@@ -391,15 +481,12 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 
     Object[] pixels = new Object[nChannels()];
 
-    // TODO: make this configurable?
-    int microservicePort = 8082;
-
     for (int c=0; c<nChannels(); c++) {
       String urlFile = "/tile/" + id + "/" + request.getZ() + "/" + c + "/" + request.getT() +
         "?x=" + x + "&y=" + y + "&w=" + width + "&h=" + height +
         "&format=tif&resolution=" + level;
 
-      URL url = new URL("http", host, microservicePort, urlFile);
+      URL url = new URL("https", host, urlFile);
       URLConnection conn = url.openConnection();
       conn.setRequestProperty("Cookie", "sessionid=" + getWebclient().getSessionId());
       conn.connect();

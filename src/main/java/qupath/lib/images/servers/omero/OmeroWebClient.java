@@ -23,6 +23,7 @@ package qupath.lib.images.servers.omero;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.net.Authenticator;
@@ -55,7 +56,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -118,7 +121,7 @@ public class OmeroWebClient {
 	private int userId;
 
   private String sessionId;
-	
+  private boolean hasMicroservice = false;
 	
 	/**
 	 * Logged in property (modified by login/loggedIn/logout/timer)
@@ -232,11 +235,37 @@ public class OmeroWebClient {
 			rtn = GeneralTools.readInputStreamAsString(input);
 		}
 
+    // look for session ID in existing session cookies
     List<HttpCookie> cookies = ((CookieManager) handler).getCookieStore().getCookies();
     for (HttpCookie cookie : cookies) {
       if (cookie.getName().equals("sessionid")) {
         sessionId = cookie.getValue();
       }
+    }
+
+    // check for microservice - enables raw tile retrieval
+    HttpURLConnection conn = null;
+    try {
+      URL optionsURL = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/webclient/render_image");
+      conn = (HttpURLConnection) optionsURL.openConnection();
+      conn.setRequestMethod("OPTIONS");
+      conn.connect();
+      int response = conn.getResponseCode();
+      if (response == HttpURLConnection.HTTP_OK) {
+        try (InputStreamReader reader = new InputStreamReader(conn.getInputStream())) {
+          JsonObject root = GsonTools.getInstance().fromJson(reader, JsonObject.class);
+          JsonPrimitive provider = root.getAsJsonPrimitive("provider");
+          if (provider != null && provider.getAsString().equals("ImageRegionMicroservice")) {
+            hasMicroservice = true;
+          }
+        }
+      }
+      else {
+        throw new IOException("Could not check for OMERO microservice (" + response +")");
+      }
+    }
+    finally {
+      conn.disconnect();
     }
 
     return rtn;
@@ -329,6 +358,10 @@ public class OmeroWebClient {
 
   String getSessionId() {
     return sessionId;
+  }
+
+  boolean hasMicroservice() {
+    return hasMicroservice;
   }
 
 	void setUsername(String newUsername) {
