@@ -236,14 +236,25 @@ public class OmeroWebClient {
 		}
 
     // look for session ID in existing session cookies
+    // this will throw an IOException if the 'sessionid' cookie is not found
+    // the session ID is used later when retrieving raw tiles from the microservice
+    sessionId = null;
     List<HttpCookie> cookies = ((CookieManager) handler).getCookieStore().getCookies();
     for (HttpCookie cookie : cookies) {
       if (cookie.getName().equals("sessionid")) {
         sessionId = cookie.getValue();
       }
     }
+    if (sessionId == null) {
+      throw new IOException("Could not find valid 'sessionid' cookie");
+    }
 
-    // check for microservice - enables raw tile retrieval
+    // check for image region microservice - enables raw tile retrieval
+    // see https://github.com/glencoesoftware/omero-ms-image-region
+    //
+    // the session ID retrieved above is not required to perform this check,
+    // but both the session ID and microservice configuration must be present in order
+    // to retrieve raw tiles
     HttpURLConnection conn = null;
     try {
       URL optionsURL = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/webclient/render_image");

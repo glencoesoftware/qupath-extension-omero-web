@@ -119,6 +119,7 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 			for (var client: activeServers) {
 				if (client == null)
 					continue;
+        // 3 dots are appended to distinguish active connections
 				MenuItem item = new MenuItem(client.getServerURI() + "...");
         activeURIs.add(client.getServerURI().toString());
 				item.setOnAction(e2 -> {
@@ -137,6 +138,8 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
       // but which are not currently connected
       for (String server : usedServers) {
         if (!server.isEmpty() && !activeURIs.contains(server)) {
+          // no suffix appended to the server name here
+          // distinguishes from active connections that have 3 dots appended
           MenuItem item = new MenuItem(server);
           item.setOnAction(e2 -> {
             handleLogin(qupath, server);

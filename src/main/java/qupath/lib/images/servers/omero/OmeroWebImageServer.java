@@ -197,6 +197,12 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		double pixelHeightMicrons = Double.NaN;
 		double zSpacingMicrons = Double.NaN;
 		PixelType pixelType = PixelType.UINT8;
+
+    // if the image region microservice is used to fetch tiles,
+    // each tile will be a single (non-RGB) channel
+    // if the microservice is not available and webgateway is used instead,
+    // then only 8-bit RGB data is supported and RGB tiles will be provided
+    // see readRenderedTile and OmeroWebImageServerBrowserCommand#isSupported
 		boolean isRGB = !client.hasMicroservice();
 		double magnification = Double.NaN;
 		
