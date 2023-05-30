@@ -257,7 +257,7 @@ public class OmeroWebClient {
     // to retrieve raw tiles
     HttpURLConnection conn = null;
     try {
-      URL optionsURL = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/webclient/render_image");
+      URL optionsURL = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/webclient/render_image/");
       conn = (HttpURLConnection) optionsURL.openConnection();
       conn.setRequestMethod("OPTIONS");
       conn.connect();
