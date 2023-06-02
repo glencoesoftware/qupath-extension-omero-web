@@ -257,7 +257,7 @@ public class OmeroWebClient {
     // to retrieve raw tiles
     HttpURLConnection conn = null;
     try {
-      URL optionsURL = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/webclient/render_image/");
+      URL optionsURL = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/tile/");
       conn = (HttpURLConnection) optionsURL.openConnection();
       conn.setRequestMethod("OPTIONS");
       conn.connect();
@@ -266,7 +266,7 @@ public class OmeroWebClient {
         try (InputStreamReader reader = new InputStreamReader(conn.getInputStream())) {
           JsonObject root = GsonTools.getInstance().fromJson(reader, JsonObject.class);
           JsonPrimitive provider = root.getAsJsonPrimitive("provider");
-          if (provider != null && provider.getAsString().equals("ImageRegionMicroservice")) {
+          if (provider != null && provider.getAsString().equals("PixelBufferMicroservice")) {
             hasMicroservice = true;
           }
         }
