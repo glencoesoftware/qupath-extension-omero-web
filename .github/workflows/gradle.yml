@@ -25,5 +25,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: qupath-extension-omero-gs
-          path: build/distributions/*.zip
+          path: lib/*.jar
           retention-days: 30
