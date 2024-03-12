@@ -4,6 +4,8 @@ plugins {
   id 'com.github.johnrengelman.shadow' version '7.0.0'
   // Reduce JavaCPP dependencies
   id 'org.bytedeco.gradle-javacpp-platform' version '1.5.7'
+
+   id 'org.openjfx.javafxplugin' version '0.0.10'
 }
 
 ext.moduleName = 'qupath.extension.omero'
@@ -32,8 +34,8 @@ repositories {
 dependencies {
   implementation "org.apache.commons:commons-text:1.9"
   
-  shadow "io.github.qupath:qupath-gui-fx:0.3.0"    
-  shadow "ome:formats-bsd:6.11.0"
+  shadow "io.github.qupath:qupath-gui-fx:0.5.1"    
+  shadow "ome:formats-bsd:7.0.1"
   shadow "org.slf4j:slf4j-api:1.7.30"
 }
 
@@ -54,7 +56,7 @@ tasks.register("copyDependencies", Copy) {
 java {
     def version = project.findProperty('toolchain')
     if (!version)
-        version = 11
+        version = 17
     else if (version.strip() == 'skip')
         version = null
     if (version != null) {
@@ -63,4 +65,16 @@ java {
             languageVersion = JavaLanguageVersion.of(version)
         }
     }
+}
+
+javafx {
+	version = "17.0.9"
+	modules = ["javafx.base",
+	           "javafx.controls",
+	           "javafx.graphics",
+	           "javafx.media",
+	           "javafx.fxml",
+	           "javafx.web",
+	           "javafx.swing"]
+	configuration = 'api'
 }
