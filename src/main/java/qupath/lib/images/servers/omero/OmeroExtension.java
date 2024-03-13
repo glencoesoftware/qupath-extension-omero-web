@@ -34,6 +34,10 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
+
 import javafx.beans.property.StringProperty;
 import javafx.event.Event;
 import javafx.event.EventHandler;
@@ -107,7 +111,12 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 	private static Menu createServerListMenu(QuPathGUI qupath, Menu browseServerMenu) {
 		EventHandler<Event> validationHandler = e -> {
       StringProperty usedServerProp = PathPrefs.createPersistentPreference("omero_ext.server_list", "");
-      String[] usedServers = usedServerProp.getValue().split(",");
+
+      Gson gson = new Gson();
+      List<String> usedServers = null;
+      try {
+          usedServers = gson.fromJson(usedServerProp.get(), new TypeToken<>() {});
+      } catch (JsonSyntaxException ignored) {}
 
 			browseServerMenu.getItems().clear();
 			
