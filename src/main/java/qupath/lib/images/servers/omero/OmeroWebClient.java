@@ -176,10 +176,8 @@ public class OmeroWebClient {
 
 	String authenticate(final PasswordAuthentication authentication, final int serverID) throws Exception {
 		var handler = CookieHandler.getDefault();
-		if (handler == null) {
-			handler = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
-			CookieHandler.setDefault(handler);
-		}
+		handler = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
+		CookieHandler.setDefault(handler);
 
 		if (this.token == null)
 			this.token = getCSRFToken();
