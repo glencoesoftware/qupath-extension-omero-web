@@ -112,11 +112,7 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 		EventHandler<Event> validationHandler = e -> {
       StringProperty usedServerProp = PathPrefs.createPersistentPreference("omero_ext.server_list", "");
 
-      Gson gson = new Gson();
-      List<String> usedServers = null;
-      try {
-          usedServers = gson.fromJson(usedServerProp.get(), new TypeToken<>() {});
-      } catch (JsonSyntaxException ignored) {}
+      List<String> usedServers = getServerList(usedServerProp);
 
 			browseServerMenu.getItems().clear();
 			
@@ -145,15 +141,17 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 
       // add servers that have been connected to previously,
       // but which are not currently connected
-      for (String server : usedServers) {
-        if (!server.isEmpty() && !activeURIs.contains(server)) {
-          // no suffix appended to the server name here
-          // distinguishes from active connections that have 3 dots appended
-          MenuItem item = new MenuItem(server);
-          item.setOnAction(e2 -> {
-            handleLogin(qupath, server);
-          });
-          browseServerMenu.getItems().add(item);
+      if (usedServers != null) {
+        for (String server : usedServers) {
+          if (!server.isEmpty() && !activeURIs.contains(server)) {
+            // no suffix appended to the server name here
+            // distinguishes from active connections that have 3 dots appended
+            MenuItem item = new MenuItem(server);
+            item.setOnAction(e2 -> {
+              handleLogin(qupath, server);
+            });
+            browseServerMenu.getItems().add(item);
+          }
         }
       }
 			
@@ -175,8 +173,11 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 					return;
 
         handleLogin(qupath, path);
-        if (usedServerProp.getValue().indexOf(path) < 0) {
-          usedServerProp.setValue(usedServerProp.getValue() + "," + path);
+
+        List<String> serverList = getServerList(usedServerProp);
+        if (serverList != null && !serverList.contains(path)) {
+          serverList.add(path);
+          usedServerProp.setValue((new Gson()).toJson(serverList));
         }
 			});
 			MenuTools.addMenuItems(browseServerMenu, null, customServerItem);
@@ -186,6 +187,18 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 		browseServerMenu.getParentMenu().setOnShowing(validationHandler);	
 		return browseServerMenu;
 	}
+
+  private static List<String> getServerList(StringProperty usedServerProp) {
+    Gson gson = new Gson();
+    List<String> usedServers = null;
+    try {
+        usedServers = gson.fromJson(usedServerProp.get(), new TypeToken<>() {});
+    } catch (JsonSyntaxException ignored) {}
+    if (usedServers == null) {
+      usedServers = new ArrayList<String>();
+    }
+    return usedServers;
+  }
 
   static void handleLogin(QuPathGUI qupath, String path) {
     try {
