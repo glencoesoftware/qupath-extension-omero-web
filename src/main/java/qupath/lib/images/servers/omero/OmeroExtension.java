@@ -143,12 +143,13 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
       // but which are not currently connected
       if (usedServers != null) {
         for (String server : usedServers) {
-          if (!server.isEmpty() && !activeURIs.contains(server)) {
+          final String usedServer = server.endsWith("/") ? server.substring(0, server.length() - 1) : server;
+          if (!usedServer.isEmpty() && !activeURIs.contains(usedServer)) {
             // no suffix appended to the server name here
             // distinguishes from active connections that have 3 dots appended
-            MenuItem item = new MenuItem(server);
+            MenuItem item = new MenuItem(usedServer);
             item.setOnAction(e2 -> {
-              handleLogin(qupath, server);
+              handleLogin(qupath, usedServer);
             });
             browseServerMenu.getItems().add(item);
           }
