@@ -11,7 +11,7 @@ plugins {
 ext.moduleName = 'qupath.extension.omero'
 archivesBaseName = 'qupath-extension-omero'
 description = "QuPath extension to support image reading using OMERO's web API."
-version = "0.3.1-SNAPSHOT"
+version = "0.4.1-gs-SNAPSHOT"
 
 repositories {
   mavenLocal()
