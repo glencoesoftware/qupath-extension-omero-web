@@ -17,8 +17,14 @@ This effectively means it is most useful for viewing and annotating RGB images
 (including whole slide images), but is not suitable for quantitative analysis 
 where JPEG compression artifacts would be problematic.
 
-The extension is intended for QuPath 0.5.x.
-It is not compatible with earlier QuPath versions.
+## Compatibility
+
+The extension is intended for use with QuPath v0.5; it is not compatible with earlier QuPath versions.
+A *new* QuPath OMERO extension is currently under active development.
+
+## Docs
+
+The main documentation for the extension is at https://qupath.readthedocs.io/en/0.5/docs/advanced/omero.html
 
 ## Installing
 

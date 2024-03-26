@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.controlsfx.glyphfont.GlyphFontRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -354,7 +355,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
                 } catch (IOException ioe) {
                   Dialogs.showErrorMessage("Open image", "Error opening image\n" + ioe.getLocalizedMessage());
                   logger.error(ioe.getMessage(), ioe);
-                  return;
+                  throw new RuntimeException(ioe);
                 }
               }
 	        		else {
@@ -625,6 +626,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
           } catch (IOException ioe) {
             Dialogs.showErrorMessage("Open image", "Error opening image\n" + ioe.getLocalizedMessage());
             logger.error(ioe.getMessage(), ioe);
+            throw new RuntimeException(ioe);
           }
         }
 				else {
@@ -1423,11 +1425,14 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 				}
 				break;
 			case RATING:
+        int rating = 0;
 				for (var ann: anns) {
 					var ann2 = (LongAnnotation)ann;
-					PaneTools.addGridRow(gp, gp.getRowCount(), 0, "Rating", new Label(String.valueOf(ann2.getValue())));
-					//gp.add(IconFactory.createNode(QuPathGUI.TOOLBAR_ICON_SIZE, QuPathGUI.TOOLBAR_ICON_SIZE, IconFactory.PathIcons.STAR), i, 0);
-        }
+					rating += ann2.getValue();
+				}
+				
+				for (int i = 0; i < Math.round(rating/anns.size()); i++)
+					gp.add(GlyphFontRegistry.font("icomoon").create("\u2605").size(QuPathGUI.TOOLBAR_ICON_SIZE).color(javafx.scene.paint.Color.GRAY), i, 0);
 				gp.setHgap(10.0);
 				break;
 			default:
