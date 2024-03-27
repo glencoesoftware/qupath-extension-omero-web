@@ -252,7 +252,7 @@ public class OmeroExtension implements QuPathExtension, GitHubProject {
 
 	@Override
 	public GitHubRepo getRepository() {
-		return GitHubRepo.create(getName(), "qupath", "qupath-extension-omero");
+		return GitHubRepo.create(getName(), "glencoesoftware", "qupath-extension-omero-web");
 	}
 	
 	@Override
