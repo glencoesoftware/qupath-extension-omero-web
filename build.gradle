@@ -8,35 +8,36 @@ plugins {
 }
 
 ext.moduleName = 'qupath.extension.omero'
-ext.qupathVersion = gradle.ext.qupathVersion
 ext.qupathJavaVersion = 17
-
-base {
-    description = "QuPath extension to support image reading using OMERO's web API."
-    version = "0.4.0"
-    group = "io.github.qupath"
-}
+archivesBaseName = 'qupath-extension-omero'
+description = "QuPath extension to support image reading using OMERO's web API."
+version = "0.4.1-gs-SNAPSHOT"
 
 repositories {
-
+  mavenLocal()
   mavenCentral()
-  
+
+  maven {
+    url 'https://artifacts.glencoesoftware.com/artifactory/scijava-thirdparty'
+  }
+
+  maven {
+    url 'https://artifacts.glencoesoftware.com/artifactory/ome.releases'
+  }
+
   maven {
     url "https://maven.scijava.org/content/repositories/releases"
   }
-  
-  maven {
-    url "https://maven.scijava.org/content/repositories/snapshots"
-  }
-  
+
 }
 
 dependencies {
-    implementation libs.commons.text
-    shadow "io.github.qupath:qupath-gui-fx:${qupathVersion}"
-    shadow libs.qupath.fxtras
-
-    shadow libs.slf4j
+  implementation "org.apache.commons:commons-text:1.9"
+  
+  shadow "io.github.qupath:qupath-gui-fx:0.5.1"    
+  shadow "io.github.qupath:qupath-fxtras:0.1.4"
+  shadow "ome:formats-bsd:7.0.1"
+  shadow "org.slf4j:slf4j-api:1.7.30"
 }
 
 jar {
@@ -87,4 +88,16 @@ tasks.withType(org.gradle.jvm.tasks.Jar) {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+javafx {
+	version = "17.0.9"
+	modules = ["javafx.base",
+	           "javafx.controls",
+	           "javafx.graphics",
+	           "javafx.media",
+	           "javafx.fxml",
+	           "javafx.web",
+	           "javafx.swing"]
+	configuration = 'api'
 }

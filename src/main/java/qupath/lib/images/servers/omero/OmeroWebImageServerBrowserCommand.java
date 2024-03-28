@@ -350,14 +350,17 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 	        	var selectedItem = tree.getSelectionModel().getSelectedItem();
 	        	if (selectedItem != null && selectedItem.getValue().getType() == OmeroObjectType.IMAGE && isSupported(selectedItem.getValue())) {
 	        		if (qupath.getProject() == null) {
-						try {
-							qupath.openImage(qupath.getViewer(), createObjectURI(selectedItem.getValue()), true, true);
-						} catch (IOException ex) {
-							throw new RuntimeException(ex);
-						}
-					}
-	        		else
+                try {
+	        			  qupath.openImage(qupath.getViewer(), createObjectURI(selectedItem.getValue()), true, true);
+                } catch (IOException ioe) {
+                  Dialogs.showErrorMessage("Open image", "Error opening image\n" + ioe.getLocalizedMessage());
+                  logger.error(ioe.getMessage(), ioe);
+                  throw new RuntimeException(ioe);
+                }
+              }
+	        		else {
 	        			promptToImportOmeroImages(createObjectURI(selectedItem.getValue()));
+              }
 	        	}
 	        }
 	    });
@@ -618,14 +621,17 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 			}
 			if (qupath.getProject() == null) {
 				if (validUris.length == 1) {
-					try {
-						qupath.openImage(qupath.getViewer(), validUris[0], true, true);
-					} catch (IOException ex) {
-						throw new RuntimeException(ex);
-					}
-				}
-				else
+          try {
+					  qupath.openImage(qupath.getViewer(), validUris[0], true, true);
+          } catch (IOException ioe) {
+            Dialogs.showErrorMessage("Open image", "Error opening image\n" + ioe.getLocalizedMessage());
+            logger.error(ioe.getMessage(), ioe);
+            throw new RuntimeException(ioe);
+          }
+        }
+				else {
 					Dialogs.showErrorMessage("Open OMERO images", "If you want to handle multiple images, you need to create a project first."); // Same as D&D for images
+        }
 				return;
 			}
 			promptToImportOmeroImages(validUris);
@@ -955,13 +961,16 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 		GuiTools.paintImage(canvas, wi);
 		return wi;
 	}
-	
+
 	/**
 	 * Return whether the image type is supported by QuPath.
 	 * @param omeroObj
 	 * @return isSupported
 	 */
-	private static boolean isSupported(OmeroObject omeroObj) {
+	private boolean isSupported(OmeroObject omeroObj) {
+    if (client.hasMicroservice()) {
+      return true;
+    }
 		if (omeroObj == null || omeroObj.getType() != OmeroObjectType.IMAGE)
 			return true;
 		return isUint8((Image)omeroObj) && has3Channels((Image)omeroObj);
@@ -1416,7 +1425,7 @@ public class OmeroWebImageServerBrowserCommand implements Runnable {
 				}
 				break;
 			case RATING:
-				int rating = 0;
+        int rating = 0;
 				for (var ann: anns) {
 					var ann2 = (LongAnnotation)ann;
 					rating += ann2.getValue();

@@ -23,6 +23,7 @@ package qupath.lib.images.servers.omero;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.net.Authenticator;
@@ -30,6 +31,7 @@ import java.net.ConnectException;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
@@ -54,7 +56,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
@@ -115,7 +119,9 @@ public class OmeroWebClient {
 	 * User ID fetched from the login request response. Can be used to match {@code Owner}s in the browser.
 	 */
 	private int userId;
-	
+
+  private String sessionId;
+  private boolean hasMicroservice = false;
 	
 	/**
 	 * Logged in property (modified by login/loggedIn/logout/timer)
@@ -170,10 +176,8 @@ public class OmeroWebClient {
 
 	String authenticate(final PasswordAuthentication authentication, final int serverID) throws Exception {
 		var handler = CookieHandler.getDefault();
-		if (handler == null) {
-			handler = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
-			CookieHandler.setDefault(handler);
-		}
+		handler = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
+		CookieHandler.setDefault(handler);
 
 		if (this.token == null)
 			this.token = getCSRFToken();
@@ -224,9 +228,56 @@ public class OmeroWebClient {
 //				e.printStackTrace();
 //			}
 
+    String rtn = null;
 		try (InputStream input = connection.getInputStream()) {
-			return GeneralTools.readInputStreamAsString(input);
+			rtn = GeneralTools.readInputStreamAsString(input);
 		}
+
+    // look for session ID in existing session cookies
+    // this will throw an IOException if the 'sessionid' cookie is not found
+    // the session ID is used later when retrieving raw tiles from the microservice
+    sessionId = null;
+    List<HttpCookie> cookies = ((CookieManager) handler).getCookieStore().getCookies();
+    for (HttpCookie cookie : cookies) {
+      if (cookie.getName().equals("sessionid")) {
+        sessionId = cookie.getValue();
+      }
+    }
+    if (sessionId == null) {
+      throw new IOException("Could not find valid 'sessionid' cookie");
+    }
+
+    // check for image region microservice - enables raw tile retrieval
+    // see https://github.com/glencoesoftware/omero-ms-image-region
+    //
+    // the session ID retrieved above is not required to perform this check,
+    // but both the session ID and microservice configuration must be present in order
+    // to retrieve raw tiles
+    HttpURLConnection conn = null;
+    try {
+      URL optionsURL = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/tile/");
+      conn = (HttpURLConnection) optionsURL.openConnection();
+      conn.setRequestMethod("OPTIONS");
+      conn.connect();
+      int response = conn.getResponseCode();
+      if (response == HttpURLConnection.HTTP_OK) {
+        try (InputStreamReader reader = new InputStreamReader(conn.getInputStream())) {
+          JsonObject root = GsonTools.getInstance().fromJson(reader, JsonObject.class);
+          JsonPrimitive provider = root.getAsJsonPrimitive("provider");
+          if (provider != null && provider.getAsString().equals("PixelBufferMicroservice")) {
+            hasMicroservice = true;
+          }
+        }
+      }
+      else {
+        throw new IOException("Could not check for OMERO microservice (" + response +")");
+      }
+    }
+    finally {
+      conn.disconnect();
+    }
+
+    return rtn;
 	}
 
 	private int keepAlive() {
@@ -314,6 +365,14 @@ public class OmeroWebClient {
 		return userId;
 	}
 
+  String getSessionId() {
+    return sessionId;
+  }
+
+  boolean hasMicroservice() {
+    return hasMicroservice;
+  }
+
 	void setUsername(String newUsername) {
 		username.set(newUsername);
 	}
@@ -389,7 +448,7 @@ public class OmeroWebClient {
 		JsonElement element = JsonParser.parseString(json);
 		return element.getAsJsonObject().get("eventContext").getAsJsonObject().get("userId").getAsInt();		
 	}
-	
+
 	/**
 	 * Check and return whether the client is logged in to its server 
 	 * (<b>not</b> necessarily with access to all its images).
@@ -441,7 +500,7 @@ public class OmeroWebClient {
 			// Parse login response JSON to get default Group and user ID
 			defaultGroup = getDefaultGroup(result);
 			userId = getUserId(result);
-			
+
 			// If we have previous URIs and the the username was different
 			if (uris.size() > 0 && !usernameOld.isEmpty() && !usernameOld.equals(authentication.getUserName())) {
 				Dialogs.showInfoNotification("OMERO login", String.format("OMERO account switched from \"%s\" to \"%s\" for %s", usernameOld, authentication.getUserName(), serverURI));

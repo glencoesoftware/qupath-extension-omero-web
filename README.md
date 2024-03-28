@@ -1,14 +1,13 @@
-[![Extension docs](https://img.shields.io/badge/docs-qupath_omero-red)](https://qupath.readthedocs.io/en/stable/docs/advanced/omero.html)
-[![Forum](https://img.shields.io/badge/forum-image.sc-green)](https://forum.image.sc/tag/qupath)
-[![Downloads (latest release)](https://img.shields.io/github/downloads-pre/qupath/qupath-extension-omero/latest/total)](https://github.com/qupath/qupath-extension-omero/releases/latest)
-[![Downloads (all releases)](https://img.shields.io/github/downloads/qupath/qupath-extension-omero/total)](https://github.com/qupath/qupath-extension-omero/releases)
+# QuPath OMERO extension with raw tiles support
 
-# QuPath OMERO extension
-
-Welcome to the OMERO extension for [QuPath](http://qupath.github.io)!
+Welcome to the Glencoe Software's version of the OMERO extension for [QuPath](http://qupath.github.io)!
 
 This adds support for accessing images hosted on an [OMERO](https://www.openmicroscopy.org/omero/) 
-server through OMERO's web API.
+server.  If microservices are available on the OMERO server, then they will be used to retrieve
+image data; all data types are supported in this case, and uncompressed image data is provided to QuPath.
+
+If microservices are not available, then the OMERO web API is used. In this case, only uint8 images
+with 3 or fewer channels are supported.
 
 > **Important!**
 > 
@@ -29,7 +28,7 @@ The main documentation for the extension is at https://qupath.readthedocs.io/en/
 
 ## Installing
 
-To install the OMERO extension, download the latest `qupath-extension-omero-[version].jar` file from [releases](https://github.com/qupath/qupath-extension-omero/releases) and drag it onto the main QuPath window.
+To install the OMERO extension, download the latest `qupath-extension-omero-[version].jar` file from [releases](https://github.com/glencoesoftware/qupath-extension-omero/releases) and drag it onto the main QuPath window.
 
 If you haven't installed any extensions before, you'll be prompted to select a QuPath user directory.
 The extension will then be copied to a location inside that directory.
