@@ -270,7 +270,8 @@ public class OmeroWebClient {
         }
       }
       else {
-        throw new IOException("Could not check for OMERO microservice (" + response +")");
+        logger.error("Could not check for OMERO microservice ({})", response);
+        hasMicroservice = false;
       }
     }
     finally {
