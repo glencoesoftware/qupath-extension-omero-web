@@ -11,7 +11,7 @@ ext.moduleName = 'qupath.extension.omero'
 ext.qupathJavaVersion = 17
 archivesBaseName = 'qupath-extension-omero'
 description = "QuPath extension to support image reading using OMERO's web API."
-version = "0.4.2-gs-SNAPSHOT"
+version = "0.4.2-gs"
 
 repositories {
   mavenLocal()
