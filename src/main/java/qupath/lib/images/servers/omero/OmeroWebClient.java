@@ -554,6 +554,7 @@ public class OmeroWebClient {
 			timer.cancel();
 			timer = null;
 			username.set("");
+			this.token = null;
 		} catch (IOException e) {
 			logger.error("Could not logout.", e.getLocalizedMessage());
 		}
