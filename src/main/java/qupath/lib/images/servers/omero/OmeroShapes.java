@@ -217,7 +217,7 @@ class OmeroShapes {
 	public static abstract class OmeroShape {
 		
 		@SerializedName(value = "TheC")
-		private int c = -1;
+		private int c;
 		@SerializedName(value = "TheZ")
 		private int z;
 		@SerializedName(value = "TheT")
