@@ -217,11 +217,11 @@ class OmeroShapes {
 	public static abstract class OmeroShape {
 		
 		@SerializedName(value = "TheC")
-		private int c = -1;
+		private Integer c;
 		@SerializedName(value = "TheZ")
-		private int z;
+		private Integer z;
 		@SerializedName(value = "TheT")
-		private int t;
+		private Integer t;
 		
 		@SerializedName(value = "@type")
 		private String type;
