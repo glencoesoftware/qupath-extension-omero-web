@@ -28,7 +28,7 @@ The main documentation for the extension is at https://qupath.readthedocs.io/en/
 
 ## Installing
 
-To install the OMERO extension, download the latest `qupath-extension-omero-[version].jar` file from [releases](https://github.com/glencoesoftware/qupath-extension-omero/releases) and drag it onto the main QuPath window.
+To install the OMERO extension, download the latest `qupath-extension-omero-web-[version].jar` file from [releases](https://github.com/glencoesoftware/qupath-extension-omero-web/releases) and drag it onto the main QuPath window.
 
 If you haven't installed any extensions before, you'll be prompted to select a QuPath user directory.
 The extension will then be copied to a location inside that directory.
