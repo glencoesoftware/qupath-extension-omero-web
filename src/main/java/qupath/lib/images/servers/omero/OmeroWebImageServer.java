@@ -282,7 +282,15 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 			if (levels > 1) {
 				JsonObject zoom = map.getAsJsonObject("zoomLevelScaling");
 				for (int i = 0; i < levels; i++) {
-					levelBuilder.addLevelByDownsample(1.0 / zoom.getAsJsonPrimitive(Integer.toString(i)).getAsDouble());
+          double rawZoomFactor = zoom.getAsJsonPrimitive(Integer.toString(i)).getAsDouble();
+          int scaleFactor = (int) Math.ceil(1 / rawZoomFactor);
+          logger.debug("level = {}, rawZoomFactor = {}, scaleFactor = {}", i, rawZoomFactor, scaleFactor);
+
+          int levelWidth = sizeX / scaleFactor;
+          int levelHeight = sizeY / scaleFactor;
+          logger.debug("  level width = {}, level height = {}", levelWidth, levelHeight);
+
+          levelBuilder.addLevel(scaleFactor, levelWidth, levelHeight);
 				}
 			} else {
 				levelBuilder.addFullResolutionLevel();
