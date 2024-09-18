@@ -313,7 +313,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 //				.args(args)
 				.name(imageName)
 				.pixelType(pixelType)
-				.rgb(isRGB)
+				.rgb(isRGB || (sizeC == 3 && pixelType == PixelType.UINT8))
 				.magnification(magnification)
 				.levels(levelBuilder.build());
 		
