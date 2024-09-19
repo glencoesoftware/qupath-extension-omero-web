@@ -281,16 +281,28 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 			int levels = map.getAsJsonPrimitive("levels").getAsInt();
 			if (levels > 1) {
 				JsonObject zoom = map.getAsJsonObject("zoomLevelScaling");
+        double aspectRatio = (double) sizeX / sizeY;
+        logger.debug("image aspect ratio = {}", aspectRatio);
 				for (int i = 0; i < levels; i++) {
           double rawZoomFactor = zoom.getAsJsonPrimitive(Integer.toString(i)).getAsDouble();
-          int scaleFactor = (int) Math.ceil(1 / rawZoomFactor);
-          logger.debug("level = {}, rawZoomFactor = {}, scaleFactor = {}", i, rawZoomFactor, scaleFactor);
+          logger.debug("level = {}, rawZoomFactor = {}", i, rawZoomFactor);
 
-          int levelWidth = sizeX / scaleFactor;
-          int levelHeight = sizeY / scaleFactor;
+          // level width and height calculation are best-effort,
+          // given that we cannot currently get the precise dimensions
+          // this needs to be fixed once web API is fixed
+
+          // we expect the width calculation to be accurate, as zoomLevelScaling
+          // was calculated based upon the resolution widths alone
+          int levelWidth = (int) Math.floor(rawZoomFactor * sizeX);
+
+          // now apply the image aspect ratio to find the height
+          // this assumes that the aspect ratio remains consistent across the whole pyramid
+          // subtract 1 to account for potential rounding issues
+          int levelHeight = (int) Math.floor(levelWidth / aspectRatio) - 1;
+
           logger.debug("  level width = {}, level height = {}", levelWidth, levelHeight);
 
-          levelBuilder.addLevel(scaleFactor, levelWidth, levelHeight);
+          levelBuilder.addLevel(1 / rawZoomFactor, levelWidth, levelHeight);
 				}
 			} else {
 				levelBuilder.addFullResolutionLevel();
