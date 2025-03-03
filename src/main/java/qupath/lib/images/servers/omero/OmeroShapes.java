@@ -269,7 +269,7 @@ class OmeroShapes {
 		
 		
 		protected ImagePlane getPlane() {
-			if (c >= 0)
+			if (c!= null && c >= 0)
 				return ImagePlane.getPlaneWithChannel(c, z, t);
 			else
 				return ImagePlane.getPlane(z, t);
