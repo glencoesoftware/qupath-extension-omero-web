@@ -269,10 +269,12 @@ class OmeroShapes {
 		
 		
 		protected ImagePlane getPlane() {
+			int zIndex = z != null ? z.intValue() : 0;
+			int tIndex = t != null ? t.intValue() : 0;
 			if (c!= null && c >= 0)
-				return ImagePlane.getPlaneWithChannel(c, z, t);
+				return ImagePlane.getPlaneWithChannel(c, zIndex, tIndex);
 			else
-				return ImagePlane.getPlane(z, t);
+				return ImagePlane.getPlane(zIndex, tIndex);
 		}
 		
 		protected void setType(String type) {
