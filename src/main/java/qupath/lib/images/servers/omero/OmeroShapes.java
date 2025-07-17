@@ -262,7 +262,7 @@ class OmeroShapes {
 			if (text != null && !text.isBlank())
 				pathObject.setName(text);
 			if (strokeColor != null)
-				pathObject.setColorRGB(strokeColor >> 8);
+				pathObject.setColor(strokeColor >> 8);
 			if (locked != null)
 				pathObject.setLocked(locked);
 		}
