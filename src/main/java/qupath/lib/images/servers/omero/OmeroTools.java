@@ -429,7 +429,7 @@ public final class OmeroTools {
 				if (pathObject instanceof PathCellObject) {
 					var detTemp = PathObjects.createDetectionObject(pathObject.getROI());
 					detTemp.setPathClass(pathObject.getPathClass());
-					detTemp.setColorRGB(pathObject.getColorRGB());
+					detTemp.setColor(pathObject.getColor());
 					detTemp.setName(pathObject.getName());
 					pathObject = detTemp;
 				}
