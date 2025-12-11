@@ -19,7 +19,7 @@ where JPEG compression artifacts would be problematic.
 
 ## Compatibility
 
-The extension is intended for use with QuPath v0.5; it is not compatible with earlier QuPath versions.
+The extension is intended for use with QuPath v0.5 and v0.6; it is not compatible with earlier QuPath versions.
 A *new* QuPath OMERO extension is currently under active development.
 
 ## Docs
