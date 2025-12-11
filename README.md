@@ -19,30 +19,16 @@ where JPEG compression artifacts would be problematic.
 
 ## Compatibility
 
-The extension is intended for use with QuPath v0.5 and v0.6; it is not compatible with earlier QuPath versions.
-A *new* QuPath OMERO extension is currently under active development.
+The extension is intended for use with QuPath v0.5 and v0.6. 
+
+## Relationship to Official QuPath Extension
+
+This extension is a fork of the original QuPath OMERO extension, maintained by Glencoe Software. 
+
+While the [QuPath community extension](https://github.com/qupath/qupath-extension-omero) has recently been updated to support similar features, this repository is maintained to ensure maximum stability and performance for **OMERO Plus** environments using Glencoe Software's microservices.
 
 ## Docs
 
-The main documentation for the extension is at https://qupath.readthedocs.io/en/0.5/docs/advanced/omero.html
+General documentation for working with OMERO in QuPath can be found at https://qupath.readthedocs.io/en/0.6/docs/advanced/omero.html.
 
-## Installing
-
-To install the OMERO extension, download the latest `qupath-extension-omero-web-[version].jar` file from [releases](https://github.com/glencoesoftware/qupath-extension-omero-web/releases) and drag it onto the main QuPath window.
-
-If you haven't installed any extensions before, you'll be prompted to select a QuPath user directory.
-The extension will then be copied to a location inside that directory.
-
-You might then need to restart QuPath (but not your computer).
-
-
-## Building
-
-You can build the extension using OpenJDK 17 or later with
-
-```bash
-gradlew clean build
-```
-
-The output will be under `build/libs`.
-You can drag the jar file on top of QuPath to install the extension.
+> **Note:** The official QuPath documentation refers to the standard community extension. While the user installation, interface, and general workflows (e.g., browsing projects, importing images) are similar, the backend connectivity mechanisms and image retrieval differ in this version.
