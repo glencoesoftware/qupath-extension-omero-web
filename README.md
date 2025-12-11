@@ -21,7 +21,7 @@ where JPEG compression artifacts would be problematic.
 
 The extension is intended for use with QuPath v0.5 and v0.6. 
 
-## Relationship to Official QuPath Extension
+## Relationship to Community QuPath Extension
 
 This extension is a fork of the original QuPath OMERO extension, maintained by Glencoe Software. 
 
