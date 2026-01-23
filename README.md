@@ -25,7 +25,7 @@ While the [QuPath community extension](https://github.com/qupath/qupath-extensio
 
 General documentation for working with OMERO in QuPath can be found at https://qupath.readthedocs.io/en/0.6/docs/advanced/omero.html.
 
-> **Note:** The official QuPath documentation refers to the standard community extension. While the user installation, interface, and general workflows (e.g., browsing projects, importing images) are similar, this version differs in how it retrieves pixel data (using OMERO Plus microservices when present rather than JSON/JPEG web APIs).
+> **Note:** The official QuPath documentation refers to the standard community extension. While the user installation, interface, and general workflows (e.g., browsing projects, importing images) are similar, this version differs in how it retrieves pixel data (using OMERO Plus microservices when present rather than the standard OMERO web API).
 
 ## Installing
 
