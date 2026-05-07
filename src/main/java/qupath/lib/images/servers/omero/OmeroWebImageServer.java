@@ -280,7 +280,7 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		if (map.getAsJsonPrimitive("tiles").getAsBoolean()) {
 			int levels = map.getAsJsonPrimitive("levels").getAsInt();
 			if (levels > 1) {
-        // newer versions of OMERO provide explicit XY resolution sizes
+        // OMERO.web 5.31.0 and later provides explicit XY resolution sizes
         // older versions only provide a scaling factor,
         // which can lead to rounding errors
         JsonObject sizes = map.getAsJsonObject("resolutions");
