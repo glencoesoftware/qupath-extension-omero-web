@@ -78,12 +78,12 @@ final class OmeroObjects {
 		}
 
 		static OmeroObjectType fromString(String text) {
-	        for (var type : OmeroObjectType.values()) {
-	            if (type.APIName.equalsIgnoreCase(text) || type.displayedName.equalsIgnoreCase(text))
-	                return type;
-	        }
-	        return UNKNOWN;
-	    }
+			for (var type : OmeroObjectType.values()) {
+				if (type.APIName.equalsIgnoreCase(text) || type.displayedName.equalsIgnoreCase(text))
+					return type;
+			}
+			return UNKNOWN;
+		}
 		
 		String toURLString() {
 			return displayedName.toLowerCase() + 's';
@@ -232,14 +232,14 @@ final class OmeroObjects {
 		
 		
 		@Override
-	    public int hashCode() {
-	        return Objects.hash(id);
-	    }
+		public int hashCode() {
+			return Objects.hash(id);
+		}
 
 		@Override
 		public boolean equals(Object obj) {
 			if (obj == this)
-	            return true;
+							return true;
 			
 			if (!(obj instanceof OmeroObject))
 				return false;

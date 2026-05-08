@@ -77,12 +77,12 @@ final class OmeroAnnotations {
 		}
 		
 		public static OmeroAnnotationType fromString(String text) {
-	        for (var type : OmeroAnnotationType.values()) {
-	            if (type.name.equalsIgnoreCase(text) || type.urlName.equalsIgnoreCase(text))
-	                return type;
-	        }
-	        return UNKNOWN;
-	    }
+			for (var type : OmeroAnnotationType.values()) {
+				if (type.name.equalsIgnoreCase(text) || type.urlName.equalsIgnoreCase(text))
+					return type;
+			}
+			return UNKNOWN;
+		}
 		
 		public String toURLString() {
 			return urlName;

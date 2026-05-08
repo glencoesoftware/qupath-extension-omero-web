@@ -227,35 +227,35 @@ public final class OmeroTools {
 		
 		try {
 			var map = OmeroRequests.requestWebClientObjectList(uri.getScheme(), uri.getHost(), uri.getPort(), OmeroObjectType.IMAGE);
-    		ExecutorService executorRequests = Executors.newSingleThreadExecutor(ThreadTools.createThreadFactory("orphaned-image-requests", true));
-    		
-    		// Get the total amount of orphaned images to load
-    		int max = map.get("images").getAsJsonArray().size();
-    		if (max == 0)
-    			orphanedFolder.setLoading(false);
-    		
-    		orphanedFolder.setTotalChildCount(max);
-    		map.get("images").getAsJsonArray().forEach(e -> {
-    			executorRequests.submit(() -> {
-    				try {
-    					var id = Integer.parseInt(e.getAsJsonObject().get("id").toString());
-    					OmeroObject omeroObj = readOmeroObject(uri.getScheme(), uri.getHost(), uri.getPort(), id, OmeroObjectType.IMAGE);
-        				Platform.runLater(() -> {
-        					list.add(omeroObj);
-        					
-        					// Check if all orphaned images were loaded
-        					if (orphanedFolder.incrementAndGetLoadedCount() >= max)
-        						orphanedFolder.setLoading(false);
-        				});
-    				} catch (IOException ex) {
+			ExecutorService executorRequests = Executors.newSingleThreadExecutor(ThreadTools.createThreadFactory("orphaned-image-requests", true));
+
+			// Get the total amount of orphaned images to load
+			int max = map.get("images").getAsJsonArray().size();
+			if (max == 0)
+				orphanedFolder.setLoading(false);
+
+			orphanedFolder.setTotalChildCount(max);
+			map.get("images").getAsJsonArray().forEach(e -> {
+				executorRequests.submit(() -> {
+					try {
+						var id = Integer.parseInt(e.getAsJsonObject().get("id").toString());
+						OmeroObject omeroObj = readOmeroObject(uri.getScheme(), uri.getHost(), uri.getPort(), id, OmeroObjectType.IMAGE);
+						Platform.runLater(() -> {
+							list.add(omeroObj);
+
+							// Check if all orphaned images were loaded
+							if (orphanedFolder.incrementAndGetLoadedCount() >= max)
+								orphanedFolder.setLoading(false);
+						});
+					} catch (IOException ex) {
 						logger.error("Could not fetch information for image id: " + e.getAsJsonObject().get("id"), ex);
 					}
-    			});
-        	});
-    		executorRequests.shutdown();
-        } catch (IOException ex) {
-        	logger.error(ex.getLocalizedMessage());
-        }
+				});
+			});
+			executorRequests.shutdown();
+		} catch (IOException ex) {
+			logger.error(ex.getLocalizedMessage());
+		}
 	}
 	
 	/**
@@ -285,36 +285,36 @@ public final class OmeroTools {
 		return list;
 	}
 	
-    /**
-     * Helper method to retrieve an {@code OmeroObject} of type {@code OmeroObjectType} with {@code id} from 
-     * a given server details. An IOException will be thrown if the connection fails.
-     * <p>
-     * N.B: this method does not set the parent object.
-     * 
-     * @param scheme
+	/**
+	 * Helper method to retrieve an {@code OmeroObject} of type {@code OmeroObjectType} with {@code id} from 
+	 * a given server details. An IOException will be thrown if the connection fails.
+	 * <p>
+	 * N.B: this method does not set the parent object.
+	 * 
+	 * @param scheme
 	 * @param host
 	 * @param port
 	 * @param id
 	 * @param type
 	 * @return OmeroObject
 	 * @throws IOException
-     */
-    public static OmeroObject readOmeroObject(String scheme, String host, int port, int id, OmeroObjectType type) throws IOException {
-    	// Request json
-    	var map = OmeroRequests.requestObjectInfo(scheme, host, port, id, type);
-        
-        // Create OmeroObject
-        var gson = new GsonBuilder().registerTypeAdapter(OmeroObject.class, new OmeroObjects.GsonOmeroObjectDeserializer()).setLenient().create();
-        return gson.fromJson(map.get("data").getAsJsonObject(), OmeroObject.class);
-    }
-    
-    /**
+	 */
+	public static OmeroObject readOmeroObject(String scheme, String host, int port, int id, OmeroObjectType type) throws IOException {
+		// Request json
+		var map = OmeroRequests.requestObjectInfo(scheme, host, port, id, type);
+
+		// Create OmeroObject
+		var gson = new GsonBuilder().registerTypeAdapter(OmeroObject.class, new OmeroObjects.GsonOmeroObjectDeserializer()).setLenient().create();
+		return gson.fromJson(map.get("data").getAsJsonObject(), OmeroObject.class);
+	}
+
+	/**
 	 * Return the Id associated with the {@code URI} provided.
 	 * If multiple Ids are present, only the first one will be retrieved.
 	 * If no Id could be found, return -1.
 	 * 
 	 * @param uri
-     * @param type 
+	 * @param type 
 	 * @return Id
 	 */
 	public static int parseOmeroObjectId(URI uri, OmeroObjectType type) {
@@ -344,7 +344,7 @@ public final class OmeroTools {
 		return -1;
 	}
 	
-    /**
+	/**
 	 * Return the type associated with the {@code URI} provided.
 	 * If multiple types are present, only the first one will be retrieved.
 	 * If no type is found, return UNKNOWN.
@@ -357,18 +357,18 @@ public final class OmeroTools {
 	 * @return omeroObjectType
 	 */
 	public static OmeroObjectType parseOmeroObjectType(URI uri) {
-			var uriString = uri.toString().replace("%3D", "=");
-	        if (patternLinkProject.matcher(uriString).find())
-	        	return OmeroObjectType.PROJECT;
-	        else if (patternLinkDataset.matcher(uriString).find())
-	        	return OmeroObjectType.DATASET;
-	        else {
-	        	for (var p: imagePatterns) {
-	        		if (p.matcher(uriString).find())
-	        			return OmeroObjectType.IMAGE;
-	        	}
-	        }
-	        return OmeroObjectType.UNKNOWN;
+		var uriString = uri.toString().replace("%3D", "=");
+		if (patternLinkProject.matcher(uriString).find())
+			return OmeroObjectType.PROJECT;
+		else if (patternLinkDataset.matcher(uriString).find())
+			return OmeroObjectType.DATASET;
+		else {
+			for (var p: imagePatterns) {
+				if (p.matcher(uriString).find())
+					return OmeroObjectType.IMAGE;
+			}
+		}
+		return OmeroObjectType.UNKNOWN;
 	}
 	
 	
@@ -530,50 +530,50 @@ public final class OmeroTools {
 	}
 	
 	
-    /**
-     * OMERO requests that return a list of items are paginated 
-     * (see <a href="https://docs.openmicroscopy.org/omero/5.6.1/developers/json-api.html#pagination">OMERO API docs</a>).
-     * Using this helper method ensures that all the requested data is retrieved.
-     * 
-     * @param url
-     * @return list of {@code Json Element}s
-     * @throws IOException
-     */
+	/**
+	 * OMERO requests that return a list of items are paginated 
+	 * (see <a href="https://docs.openmicroscopy.org/omero/5.6.1/developers/json-api.html#pagination">OMERO API docs</a>).
+	 * Using this helper method ensures that all the requested data is retrieved.
+	 * 
+	 * @param url
+	 * @return list of {@code Json Element}s
+	 * @throws IOException
+	 */
 	// TODO: Consider using parallel/asynchronous requests
-    static List<JsonElement> readPaginated(URL url) throws IOException {
-    	List<JsonElement> jsonList = new ArrayList<>();
-        String symbol = (url.getQuery() != null && !url.getQuery().isEmpty()) ? "&" : "?";
+	static List<JsonElement> readPaginated(URL url) throws IOException {
+		List<JsonElement> jsonList = new ArrayList<>();
+		String symbol = (url.getQuery() != null && !url.getQuery().isEmpty()) ? "&" : "?";
 
-        // Open connection
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        int response = connection.getResponseCode();
-        
-        // Catch bad response
-        if (response != 200)
-        	return jsonList;
+		// Open connection
+		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		int response = connection.getResponseCode();
 
-        JsonObject map;
-        try (InputStreamReader reader = new InputStreamReader(connection.getInputStream())) {
-        	map = GsonTools.getInstance().fromJson(reader, JsonObject.class);
-        }
+		// Catch bad response
+		if (response != 200)
+			return jsonList;
 
-        map.get("data").getAsJsonArray().forEach(jsonList::add);
-    	JsonObject meta = map.getAsJsonObject("meta");
-        int offset = 0;
-        int totalCount = meta.get("totalCount").getAsInt();
-        int limit = meta.get("limit").getAsInt();
-        while (offset + limit < totalCount) {
-            offset += limit;
-            URL nextURL = new URL(url + symbol + "offset=" + offset);
-            InputStreamReader newPageReader = new InputStreamReader(nextURL.openStream());
-            JsonObject newPageMap = GsonTools.getInstance().fromJson(newPageReader, JsonObject.class);
-            newPageMap.get("data").getAsJsonArray().forEach(jsonList::add);
-        }
-        return jsonList;
-    }
-   
-    
-    /**
+		JsonObject map;
+		try (InputStreamReader reader = new InputStreamReader(connection.getInputStream())) {
+			map = GsonTools.getInstance().fromJson(reader, JsonObject.class);
+		}
+
+		map.get("data").getAsJsonArray().forEach(jsonList::add);
+		JsonObject meta = map.getAsJsonObject("meta");
+		int offset = 0;
+		int totalCount = meta.get("totalCount").getAsInt();
+		int limit = meta.get("limit").getAsInt();
+		while (offset + limit < totalCount) {
+			offset += limit;
+			URL nextURL = new URL(url + symbol + "offset=" + offset);
+			InputStreamReader newPageReader = new InputStreamReader(nextURL.openStream());
+			JsonObject newPageMap = GsonTools.getInstance().fromJson(newPageReader, JsonObject.class);
+			newPageMap.get("data").getAsJsonArray().forEach(jsonList::add);
+		}
+		return jsonList;
+	}
+
+
+	/**
 	 * Return a list of valid URIs from the given URI. If no valid URI can be parsed 
 	 * from it, an IOException is thrown.
 	 * <p>
@@ -584,125 +584,125 @@ public final class OmeroTools {
 	 * @return list
 	 * @throws IOException
 	 */
-    static List<URI> getURIs(URI uri) throws IOException {
+	static List<URI> getURIs(URI uri) throws IOException {
 		List<URI> list = new ArrayList<>();
 		URI cleanServerUri = URI.create(uri.toString().replace("show%3Dimage-", "show=image-"));
-        String elemId = "image-";
-        String query = cleanServerUri.getQuery() != null ? uri.getQuery() : "";
-        String shortPath = cleanServerUri.getPath() + query;
-        
-        Pattern[] similarPatterns = new Pattern[] {patternOldViewer, patternNewViewer, patternWebViewer};
+		String elemId = "image-";
+		String query = cleanServerUri.getQuery() != null ? uri.getQuery() : "";
+		String shortPath = cleanServerUri.getPath() + query;
 
-        // Check for simpler patterns first
-        for (int i = 0; i < similarPatterns.length; i++) {
-        	var matcher = similarPatterns[i].matcher(shortPath);
-            if (matcher.find()) {
-                elemId += matcher.group(1);
-                
-                try {
+		Pattern[] similarPatterns = new Pattern[] {patternOldViewer, patternNewViewer, patternWebViewer};
+
+		// Check for simpler patterns first
+		for (int i = 0; i < similarPatterns.length; i++) {
+			var matcher = similarPatterns[i].matcher(shortPath);
+			if (matcher.find()) {
+				elemId += matcher.group(1);
+
+				try {
 					list.add(new URL(cleanServerUri.getScheme(), cleanServerUri.getHost(), cleanServerUri.getPort(), "/webclient/?show=" + elemId).toURI());
 				} catch (MalformedURLException | URISyntaxException ex) {
 					logger.warn(ex.getLocalizedMessage());
 				}
-                return list;
-            }
-        }
+				return list;
+			}
+		}
 
-        // If no simple pattern was matched, check for the last possible one: /webclient/?show=
-        if (shortPath.startsWith("/webclient/show")) {
-        	URI newURI = getStandardURI(uri);
-            var patternElem = Pattern.compile("image-(\\d+)");
-            var matcherElem = patternElem.matcher(newURI.toString());
-            while (matcherElem.find()) {
-                list.add(URI.create(String.format("%s://%s%s%s%s%s", 
-                		uri.getScheme(), 
-                		uri.getHost(),
-                		uri.getPort() >= 0 ? ":" + uri.getPort() : "", 
-                		uri.getPath(), 
-                		"?show=image-", 
-                		matcherElem.group(1))));
-            }
-        	return list;
-        }
-        
-        // At this point, no valid URI pattern was found
-        throw new IOException("URI not recognized: " + uri.toString());
+		// If no simple pattern was matched, check for the last possible one: /webclient/?show=
+		if (shortPath.startsWith("/webclient/show")) {
+			URI newURI = getStandardURI(uri);
+			var patternElem = Pattern.compile("image-(\\d+)");
+			var matcherElem = patternElem.matcher(newURI.toString());
+			while (matcherElem.find()) {
+				list.add(URI.create(String.format("%s://%s%s%s%s%s", 
+						uri.getScheme(), 
+						uri.getHost(),
+						uri.getPort() >= 0 ? ":" + uri.getPort() : "", 
+						uri.getPath(), 
+						"?show=image-", 
+						matcherElem.group(1))));
+			}
+			return list;
+		}
+		
+		// At this point, no valid URI pattern was found
+		throw new IOException("URI not recognized: " + uri.toString());
 	}
 	
-    static URI getStandardURI(URI uri) throws IOException {
+	static URI getStandardURI(URI uri) throws IOException {
 		List<String> ids = new ArrayList<>();
 		String vertBarSign = "%7C";
 		
 		// Identify the type of element shown (e.g. dataset)
 		OmeroObjectType type;
-        String query = uri.getQuery() != null ? uri.getQuery() : "";
-        
-        // Because of encoding, the equal sign might not be recognized when loading .qpproj file
-        query = query.replace("%3D", "=");
-        
-        // Match 
-        var matcherType = patternType.matcher(query);
-        if (matcherType.find())
-            type = OmeroObjectType.fromString(matcherType.group(1).replace("-", ""));
-        else
-            throw new IOException("URI not recognized: " + uri.toString());
-        
-        var patternId = Pattern.compile(type.toString().toLowerCase() + "-(\\d+)");
-        var matcherId = patternId.matcher(query);
-        while (matcherId.find()) {
-        	ids.add(matcherId.group(1));
-        }
+		String query = uri.getQuery() != null ? uri.getQuery() : "";
 		
-        // Cascading the types to get all ('leaf') images
-        StringBuilder sb = new StringBuilder(
-        		String.format("%s://%s%s%s%s",
-	        		uri.getScheme(), 
-	        		uri.getHost(), 
-	        		uri.getPort() >= 0 ? ":" + uri.getPort() : "", 
-	        		uri.getPath(), 
-	        		"?show=image-"));
-        
-        List<String> tempIds = new ArrayList<>();
-        // TODO: Support screen and plates
-        switch (type) {
-        case SCREEN:
-        case PLATE:
-        case WELL:
-        	break;
-        case PROJECT:
-        	for (String id: ids) {
-        		var data = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(), uri.getPort(), OmeroObjectType.DATASET, Integer.parseInt(id));
-    			for (int i = 0; i < data.size(); i++) {
-        			tempIds.add(data.get(i).getAsJsonObject().get("@id").getAsString());
-        		}
-        	}
-        	ids =  new ArrayList<>(tempIds);
-        	tempIds.clear();
-        	type = OmeroObjectType.DATASET;
-        	
-        case DATASET:
-        	for (String id: ids) {
-        		var data = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(), uri.getPort(), OmeroObjectType.IMAGE, Integer.parseInt(id));
-    			for (int i = 0; i < data.size(); i++) {
-    				tempIds.add(data.get(i).getAsJsonObject().get("@id").getAsString());
-    			}	
-        	}
-        	ids = new ArrayList<>(tempIds);
-        	tempIds.clear();
-        	type = OmeroObjectType.IMAGE;
-        	
-        case IMAGE:
-        	if (ids.isEmpty())
-        		logger.info("No image found in URI: " + uri.toString());
-        	for (int i = 0; i < ids.size(); i++) {
-        		String imgId = (i == ids.size()-1) ? ids.get(i) : ids.get(i) + vertBarSign + "image-";
-        		sb.append(imgId);
-        	}
-        	break;
-        default:
-        	throw new IOException("No image found in URI: " + uri.toString());
-        }
-        
+		// Because of encoding, the equal sign might not be recognized when loading .qpproj file
+		query = query.replace("%3D", "=");
+		
+		// Match 
+		var matcherType = patternType.matcher(query);
+		if (matcherType.find())
+			type = OmeroObjectType.fromString(matcherType.group(1).replace("-", ""));
+		else
+			throw new IOException("URI not recognized: " + uri.toString());
+		
+		var patternId = Pattern.compile(type.toString().toLowerCase() + "-(\\d+)");
+		var matcherId = patternId.matcher(query);
+		while (matcherId.find()) {
+			ids.add(matcherId.group(1));
+		}
+		
+		// Cascading the types to get all ('leaf') images
+		StringBuilder sb = new StringBuilder(
+				String.format("%s://%s%s%s%s",
+					uri.getScheme(), 
+					uri.getHost(), 
+					uri.getPort() >= 0 ? ":" + uri.getPort() : "", 
+					uri.getPath(), 
+					"?show=image-"));
+		
+		List<String> tempIds = new ArrayList<>();
+		// TODO: Support screen and plates
+		switch (type) {
+			case SCREEN:
+			case PLATE:
+			case WELL:
+				break;
+			case PROJECT:
+				for (String id: ids) {
+					var data = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(), uri.getPort(), OmeroObjectType.DATASET, Integer.parseInt(id));
+					for (int i = 0; i < data.size(); i++) {
+						tempIds.add(data.get(i).getAsJsonObject().get("@id").getAsString());
+					}
+				}
+				ids =  new ArrayList<>(tempIds);
+				tempIds.clear();
+				type = OmeroObjectType.DATASET;
+				
+			case DATASET:
+				for (String id: ids) {
+					var data = OmeroRequests.requestObjectList(uri.getScheme(), uri.getHost(), uri.getPort(), OmeroObjectType.IMAGE, Integer.parseInt(id));
+					for (int i = 0; i < data.size(); i++) {
+						tempIds.add(data.get(i).getAsJsonObject().get("@id").getAsString());
+					}	
+				}
+				ids = new ArrayList<>(tempIds);
+				tempIds.clear();
+				type = OmeroObjectType.IMAGE;
+				
+			case IMAGE:
+				if (ids.isEmpty())
+					logger.info("No image found in URI: " + uri.toString());
+				for (int i = 0; i < ids.size(); i++) {
+					String imgId = (i == ids.size()-1) ? ids.get(i) : ids.get(i) + vertBarSign + "image-";
+					sb.append(imgId);
+				}
+				break;
+			default:
+				throw new IOException("No image found in URI: " + uri.toString());
+		}
+		
 		return URI.create(sb.toString());
 	}
 }

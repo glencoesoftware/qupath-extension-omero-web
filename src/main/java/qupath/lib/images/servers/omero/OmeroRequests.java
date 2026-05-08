@@ -120,17 +120,17 @@ public final class OmeroRequests {
 		URL url = new URL(scheme, host, port, String.format(JSON_API_INFO, type.toURLString(), id) + (args == null ? "" : args));
 		
 		// Open connection
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        int response = connection.getResponseCode();
-        
-        // Catch bad response
-        if (response != 200)
-        	throw new IOException(String.format("Connection to %s failed: Error %d.", url.getHost(), response));
-        
-        // Read input stream
-        try (InputStreamReader reader = new InputStreamReader(connection.getInputStream())) {
-        	return GsonTools.getInstance().fromJson(reader, JsonObject.class);
-        }
+		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		int response = connection.getResponseCode();
+		
+		// Catch bad response
+		if (response != 200)
+			throw new IOException(String.format("Connection to %s failed: Error %d.", url.getHost(), response));
+		
+		// Read input stream
+		try (InputStreamReader reader = new InputStreamReader(connection.getInputStream())) {
+			return GsonTools.getInstance().fromJson(reader, JsonObject.class);
+		}
 	}
 	
 	/**
@@ -151,7 +151,7 @@ public final class OmeroRequests {
 	 * @see #requestWebClientObjectList
 	 */
 	public static List<JsonElement> requestObjectList(String scheme, String host, int port, OmeroObjectType objectType) throws IOException {
-			return requestObjectList(scheme, host, port, objectType, null, -1);
+		return requestObjectList(scheme, host, port, objectType, null, -1);
 	}
 	
 	/**
@@ -275,11 +275,11 @@ public final class OmeroRequests {
 	public static JsonObject requestWebClientObjectList(String scheme, String host, int port, OmeroObjectType objectType) throws IOException {
 		URL urlOrphanedImages = new URL(scheme, host, port, String.format("/webclient/api/%s/?orphaned=true", objectType.toURLString()));
 		HttpURLConnection connection = (HttpURLConnection) urlOrphanedImages.openConnection();
-        if (connection.getResponseCode() == 200) {
-        	try (InputStreamReader reader = new InputStreamReader(connection.getInputStream())) {
-        		return GsonTools.getInstance().fromJson(reader, JsonObject.class);
-        	}
-        }
+		if (connection.getResponseCode() == 200) {
+			try (InputStreamReader reader = new InputStreamReader(connection.getInputStream())) {
+				return GsonTools.getInstance().fromJson(reader, JsonObject.class);
+			}
+		}
 		throw new IOException(String.format("Error %d while connecting to OMERO Webclient: %s", connection.getResponseCode(), connection.getResponseMessage()));
 	}
 	
