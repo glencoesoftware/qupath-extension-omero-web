@@ -280,28 +280,28 @@ public class OmeroWebImageServer extends AbstractTileableImageServer implements 
 		if (map.getAsJsonPrimitive("tiles").getAsBoolean()) {
 			int levels = map.getAsJsonPrimitive("levels").getAsInt();
 			if (levels > 1) {
-        // OMERO.web 5.31.0 and later provides explicit XY resolution sizes
-        // older versions only provide a scaling factor,
-        // which can lead to rounding errors
-        JsonObject sizes = map.getAsJsonObject("resolutions");
-        logger.debug("sizes = {}", sizes);
-        if (sizes != null) {
-          for (int i=0; i<levels; i++) {
-            JsonObject xy = sizes.getAsJsonObject(Integer.toString(i));
-            int x = xy.getAsJsonPrimitive("sizeX").getAsInt();
-            int y = xy.getAsJsonPrimitive("sizeY").getAsInt();
-            logger.debug("adding resolution level using size: {}x{}", x, y);
-            levelBuilder.addLevel(x, y);
-          }
-        }
-        else {
-          JsonObject zoom = map.getAsJsonObject("zoomLevelScaling");
-          for (int i = 0; i < levels; i++) {
-            double zoomLevel = 1.0 / zoom.getAsJsonPrimitive(Integer.toString(i)).getAsDouble();
-            logger.debug("adding resolution level using zoom level: {}", zoomLevel);
-            levelBuilder.addLevelByDownsample(zoomLevel);
-          }
-        }
+				// OMERO.web 5.31.0 and later provides explicit XY resolution sizes
+				// older versions only provide a scaling factor,
+				// which can lead to rounding errors
+				JsonObject sizes = map.getAsJsonObject("resolutions");
+				logger.debug("sizes = {}", sizes);
+				if (sizes != null) {
+					for (int i=0; i<levels; i++) {
+						JsonObject xy = sizes.getAsJsonObject(Integer.toString(i));
+						int x = xy.getAsJsonPrimitive("sizeX").getAsInt();
+						int y = xy.getAsJsonPrimitive("sizeY").getAsInt();
+						logger.debug("adding resolution level using size: {}x{}", x, y);
+						levelBuilder.addLevel(x, y);
+					}
+				}
+				else {
+					JsonObject zoom = map.getAsJsonObject("zoomLevelScaling");
+					for (int i = 0; i < levels; i++) {
+						double zoomLevel = 1.0 / zoom.getAsJsonPrimitive(Integer.toString(i)).getAsDouble();
+						logger.debug("adding resolution level using zoom level: {}", zoomLevel);
+						levelBuilder.addLevelByDownsample(zoomLevel);
+					}
+				}
 			} else {
 				levelBuilder.addFullResolutionLevel();
 			}
