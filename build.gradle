@@ -5,6 +5,7 @@ plugins {
   id 'org.openjfx.javafxplugin' version '0.1.0'
   // Version in settings.gradle
   id 'org.bytedeco.gradle-javacpp-platform'
+  id 'checkstyle'
 }
 
 ext.moduleName = 'qupath.extension.omero-web'

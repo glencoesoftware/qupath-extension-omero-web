@@ -94,17 +94,17 @@ public class OmeroWebClientsCommand implements Runnable {
 			
 			// If a change is detected in the clients list, refresh pane
 			OmeroWebClients.getAllClients().addListener(new ListChangeListener<OmeroWebClient>() {
-			    @Override
-			    public void onChanged(Change<? extends OmeroWebClient> c) {
-			    	if (dialog == null)
-			    		return;
+					@Override
+					public void onChanged(Change<? extends OmeroWebClient> c) {
+						if (dialog == null)
+							return;
 
-			    	// If 'import-project' thread ('Open URI..'), 'Not on FX appl. thread' Exception can be thrown
-			    	Platform.runLater(() -> {
-			    		refreshServerGrid();
-			    		dialog.getScene().getWindow().sizeToScene();
-			    	});
-			    }
+						// If 'import-project' thread ('Open URI..'), 'Not on FX appl. thread' Exception can be thrown
+						Platform.runLater(() -> {
+							refreshServerGrid();
+							dialog.getScene().getWindow().sizeToScene();
+						});
+					}
 			});
 			
 			refreshServerGrid();

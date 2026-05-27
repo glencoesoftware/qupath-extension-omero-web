@@ -120,8 +120,8 @@ public class OmeroWebClient {
 	 */
 	private int userId;
 
-  private String sessionId;
-  private boolean hasMicroservice = false;
+	private String sessionId;
+	private boolean hasMicroservice = false;
 	
 	/**
 	 * Logged in property (modified by login/loggedIn/logout/timer)
@@ -228,57 +228,57 @@ public class OmeroWebClient {
 //				e.printStackTrace();
 //			}
 
-    String rtn = null;
+		String rtn = null;
 		try (InputStream input = connection.getInputStream()) {
 			rtn = GeneralTools.readInputStreamAsString(input);
 		}
 
-    // look for session ID in existing session cookies
-    // this will throw an IOException if the 'sessionid' cookie is not found
-    // the session ID is used later when retrieving raw tiles from the microservice
-    sessionId = null;
-    List<HttpCookie> cookies = ((CookieManager) handler).getCookieStore().getCookies();
-    for (HttpCookie cookie : cookies) {
-      if (cookie.getName().equals("sessionid")) {
-        sessionId = cookie.getValue();
-      }
-    }
-    if (sessionId == null) {
-      throw new IOException("Could not find valid 'sessionid' cookie");
-    }
+		// look for session ID in existing session cookies
+		// this will throw an IOException if the 'sessionid' cookie is not found
+		// the session ID is used later when retrieving raw tiles from the microservice
+		sessionId = null;
+		List<HttpCookie> cookies = ((CookieManager) handler).getCookieStore().getCookies();
+		for (HttpCookie cookie : cookies) {
+			if (cookie.getName().equals("sessionid")) {
+				sessionId = cookie.getValue();
+			}
+		}
+		if (sessionId == null) {
+			throw new IOException("Could not find valid 'sessionid' cookie");
+		}
 
-    // check for image region microservice - enables raw tile retrieval
-    // see https://github.com/glencoesoftware/omero-ms-image-region
-    //
-    // the session ID retrieved above is not required to perform this check,
-    // but both the session ID and microservice configuration must be present in order
-    // to retrieve raw tiles
-    HttpURLConnection conn = null;
-    try {
-      URL optionsURL = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/tile/");
-      conn = (HttpURLConnection) optionsURL.openConnection();
-      conn.setRequestMethod("OPTIONS");
-      conn.connect();
-      int response = conn.getResponseCode();
-      if (response == HttpURLConnection.HTTP_OK) {
-        try (InputStreamReader reader = new InputStreamReader(conn.getInputStream())) {
-          JsonObject root = GsonTools.getInstance().fromJson(reader, JsonObject.class);
-          JsonPrimitive provider = root.getAsJsonPrimitive("provider");
-          if (provider != null && provider.getAsString().equals("PixelBufferMicroservice")) {
-            hasMicroservice = true;
-          }
-        }
-      }
-      else {
-        logger.error("Could not check for OMERO microservice ({})", response);
-        hasMicroservice = false;
-      }
-    }
-    finally {
-      conn.disconnect();
-    }
+		// check for image region microservice - enables raw tile retrieval
+		// see https://github.com/glencoesoftware/omero-ms-image-region
+		//
+		// the session ID retrieved above is not required to perform this check,
+		// but both the session ID and microservice configuration must be present in order
+		// to retrieve raw tiles
+		HttpURLConnection conn = null;
+		try {
+			URL optionsURL = new URL(serverURI.getScheme(), serverURI.getHost(), serverURI.getPort(), "/tile/");
+			conn = (HttpURLConnection) optionsURL.openConnection();
+			conn.setRequestMethod("OPTIONS");
+			conn.connect();
+			int response = conn.getResponseCode();
+			if (response == HttpURLConnection.HTTP_OK) {
+				try (InputStreamReader reader = new InputStreamReader(conn.getInputStream())) {
+					JsonObject root = GsonTools.getInstance().fromJson(reader, JsonObject.class);
+					JsonPrimitive provider = root.getAsJsonPrimitive("provider");
+					if (provider != null && provider.getAsString().equals("PixelBufferMicroservice")) {
+						hasMicroservice = true;
+					}
+				}
+			}
+			else {
+				logger.error("Could not check for OMERO microservice ({})", response);
+				hasMicroservice = false;
+			}
+		}
+		finally {
+			conn.disconnect();
+		}
 
-    return rtn;
+		return rtn;
 	}
 
 	private int keepAlive() {
@@ -319,16 +319,16 @@ public class OmeroWebClient {
 			// Implementing this as a switch because of future plates/wells/.. implementations
 			String query;
 			switch (type) {
-			case PROJECT:
-			case DATASET:
-			case IMAGE:
-				query = String.format("/api/v0/m/%s/", type.toURLString());
-				break;
-			case ORPHANED_FOLDER:
-			case UNKNOWN:
-				throw new IllegalArgumentException();
-			default:
-				throw new OperationNotSupportedException("Type not supported: " + type);
+				case PROJECT:
+				case DATASET:
+				case IMAGE:
+					query = String.format("/api/v0/m/%s/", type.toURLString());
+					break;
+				case ORPHANED_FOLDER:
+				case UNKNOWN:
+					throw new IllegalArgumentException();
+				default:
+					throw new OperationNotSupportedException("Type not supported: " + type);
 			}	
 			
 			URL url = new URL(uri.getScheme(), uri.getHost(), uri.getPort(), query + id);
@@ -366,13 +366,13 @@ public class OmeroWebClient {
 		return userId;
 	}
 
-  String getSessionId() {
-    return sessionId;
-  }
+	String getSessionId() {
+		return sessionId;
+	}
 
-  boolean hasMicroservice() {
-    return hasMicroservice;
-  }
+	boolean hasMicroservice() {
+		return hasMicroservice;
+	}
 
 	void setUsername(String newUsername) {
 		username.set(newUsername);
@@ -569,7 +569,7 @@ public class OmeroWebClient {
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == this)
-            return true;
+			return true;
 		
 		if (!(obj instanceof OmeroWebClient))
 			return false;
